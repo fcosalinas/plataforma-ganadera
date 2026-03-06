@@ -456,178 +456,196 @@
 
             <!-- Dashboard Section -->
             <section id="dashboard" class="section">
-                <div class="dashboard-layout">
-                    <div class="dashboard-main">
-                        <div class="dashboard-header">
-                            <h2>Dashboard de KPIs</h2>
-                            <div class="fundo-selector">
-                                <label for="fundoDashboard">Fundo:</label>
-                                <select id="fundoDashboard" onchange="window.plataforma.modules.dashboard.filtrarPorFundo(this.value)">
-                                    <option value="todos">Todos los Fundos</option>
-                                </select>
-                            </div>
+                <div class="dashboard-container">
+                    <div class="dashboard-header">
+                        <h1>Dashboard Ganadero</h1>
+                        <p>Métricas clave y análisis de producción en tiempo real</p>
+                    </div>
+                    
+                    <div class="dashboard-controls">
+                        <div class="filtro-container">
+                            <label for="fundoDashboard">Fundo:</label>
+                            <select id="fundoDashboard" onchange="window.plataforma.modules.dashboard.filtrarPorFundo(this.value)">
+                                <option value="todos">Todos los Fundos</option>
+                            </select>
                         </div>
-                        
-                        <div class="kpis-section">
-                            <div class="kpis-header">
-                                <h2>KPIs Lechería</h2>
-                                <p class="kpi-disclaimer">* Variación mostrada respecto al promedio de los últimos 7 días</p>
+                    </div>
+                    
+                    <div class="kpis-container">
+                        <!-- KPIs Directos - Sin Contenedores -->
+                        <div class="kpis-grid">
+                            <!-- Primera fila: 4 tarjetas de valor -->
+                            <div class="kpi-card valor" data-kpi="lechePlanta">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🏭 Leche planta</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiLechePlanta">0 L</div>
+                                    <div class="kpi-trend" id="trendLechePlanta">➡️ 0%</div>
+                                </div>
+                            </div>
+                            <div class="kpi-card valor" data-kpi="totalVacas">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🐄 Total vacas</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiTotalVacas">0</div>
+                                    <div class="kpi-trend" id="trendTotalVacas">➡️ 0%</div>
+                                </div>
+                            </div>
+                            <div class="kpi-card valor" data-kpi="vacasEntrantes">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">📥 Vacas entrantes</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiVacasEntrantes">0</div>
+                                    <div class="kpi-trend" id="trendVacasEntrantes">➡️ 0%</div>
+                                </div>
+                            </div>
+                            <div class="kpi-card valor" data-kpi="vacasSalientes">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">📤 Vacas salientes</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiVacasSalientes">0</div>
+                                    <div class="kpi-trend" id="trendVacasSalientes">➡️ 0%</div>
+                                </div>
                             </div>
                             
-                            <!-- A) Producción -->
-                            <div class="kpi-category">
-                                <h3 class="category-title">📊 A) Producción</h3>
-                                <div class="kpis-grid">
-                                    <div class="kpi-card">
-                                        <h4>Total leche diaria</h4>
-                                        <div class="kpi-value" id="kpiProduccionDiaria">0 L</div>
-                                        <div class="kpi-trend" id="trendProduccion">➡️ 0%</div>
+                            <!-- Segunda fila: 3 tarjetas evolutivas -->
+                            <div class="kpi-card evolutivo" data-kpi="produccionDiaria">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🥛 Total leche diaria</div>
+                                        <div class="kpi-current-value" id="kpiProduccionDiaria">0 L</div>
                                     </div>
-                                    <div class="kpi-card">
-                                        <h4>Leche planta (acumulado mensual)</h4>
-                                        <div class="kpi-value" id="kpiLechePlanta">0 L</div>
-                                        <div class="kpi-trend" id="trendLechePlanta">➡️ 0%</div>
+                                    <div class="kpi-chart">
+                                        <canvas class="chart-canvas" id="chart-kpi-produccionDiaria"></canvas>
+                                        <div class="chart-label" id="chart-label-produccionDiaria">0 L</div>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- B) Rebaño / Base productiva -->
-                            <div class="kpi-category">
-                                <h3 class="category-title">🐄 B) Rebaño / Base productiva</h3>
-                                <div class="kpis-grid">
-                                    <div class="kpi-card">
-                                        <h4>Total vacas ordeña</h4>
-                                        <div class="kpi-value" id="kpiTotalVacas">0</div>
-                                        <div class="kpi-trend" id="trendTotalVacas">➡️ 0%</div>
+                            <div class="kpi-card evolutivo" data-kpi="concentrado">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🌾 Consumo de alimento</div>
+                                        <div class="kpi-current-value" id="kpiConcentrado">0 kg</div>
                                     </div>
-                                    <div class="kpi-card">
-                                        <h4>Vacas entrantes</h4>
-                                        <div class="kpi-value" id="kpiVacasEntrantes">0</div>
-                                        <div class="kpi-trend" id="trendVacasEntrantes">➡️ 0%</div>
-                                    </div>
-                                    <div class="kpi-card">
-                                        <h4>Vacas salientes</h4>
-                                        <div class="kpi-value" id="kpiVacasSalientes">0</div>
-                                        <div class="kpi-trend" id="trendVacasSalientes">➡️ 0%</div>
-                                    </div>
-                                    <div class="kpi-card">
-                                        <h4>Vacas secas</h4>
-                                        <div class="kpi-value" id="kpiVacasSecas">0</div>
-                                        <div class="kpi-trend" id="trendVacasSecas">➡️ 0%</div>
+                                    <div class="kpi-chart">
+                                        <canvas class="chart-canvas" id="chart-kpi-concentrado"></canvas>
+                                        <div class="chart-label" id="chart-label-concentrado">0 kg</div>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- C) Eficiencia productiva -->
-                            <div class="kpi-category">
-                                <h3 class="category-title">⚡ C) Eficiencia productiva</h3>
-                                <div class="kpis-grid">
-                                    <div class="kpi-card">
-                                        <h4>Litros/vaca día</h4>
-                                        <div class="kpi-value" id="kpiLitrosVacaDia">0 L</div>
-                                        <div class="kpi-trend" id="trendLitrosVacaDia">➡️ 0%</div>
+                            <div class="kpi-card evolutivo" data-kpi="proteina">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🧪 Proteína</div>
+                                        <div class="kpi-current-value" id="kpiProteina">0%</div>
                                     </div>
-                                    <div class="kpi-card">
-                                        <h4>Leche diaria (control lechero)</h4>
-                                        <div class="kpi-value" id="kpiLecheDiaria">0 L</div>
-                                        <div class="kpi-trend" id="trendLecheDiaria">➡️ 0%</div>
+                                    <div class="kpi-chart">
+                                        <canvas class="chart-canvas" id="chart-kpi-proteina"></canvas>
+                                        <div class="chart-label" id="chart-label-proteina">0%</div>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- D) Calidad / Sólidos -->
-                            <div class="kpi-category">
-                                <h3 class="category-title">🥛 D) Calidad / Sólidos</h3>
-                                <div class="kpis-grid">
-                                    <div class="kpi-card">
-                                        <h4>% Proteína leche</h4>
-                                        <div class="kpi-value" id="kpiProteina">0%</div>
-                                        <div class="kpi-trend" id="trendProteina">➡️ 0%</div>
+                            
+                            <!-- Resto de tarjetas de valor -->
+                            <div class="kpi-card valor" data-kpi="litrosVacaDia">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🥛 Leche diaria</div>
                                     </div>
-                                    <div class="kpi-card">
-                                        <h4>% Grasa leche</h4>
-                                        <div class="kpi-value" id="kpiGrasa">0%</div>
-                                        <div class="kpi-trend" id="trendGrasa">➡️ 0%</div>
-                                    </div>
+                                    <div class="kpi-value" id="kpiLecheDiaria">0 L</div>
+                                    <div class="kpi-trend" id="trendLecheDiaria">➡️ 0%</div>
                                 </div>
                             </div>
-
-                            <!-- E) Costos de alimentación -->
-                            <div class="kpi-category">
-                                <h3 class="category-title">💰 E) Costos de alimentación</h3>
-                                <div class="kpis-grid">
-                                    <div class="kpi-card">
-                                        <h4>Costo dieta/Lt (sin pastoreo)</h4>
-                                        <div class="kpi-value" id="kpiCostoDiariaLitro">$0</div>
-                                        <div class="kpi-trend" id="trendCostoDiariaLitro">➡️ 0%</div>
+                            
+                            <!-- Tercera fila: Vacas secas -->
+                            <div class="kpi-card valor" data-kpi="vacasSecas">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🔴 Vacas secas</div>
                                     </div>
-                                    <div class="kpi-card">
-                                        <h4>Costo dieta/Vaca día</h4>
-                                        <div class="kpi-value" id="kpiCostoDiariaVaca">$0</div>
-                                        <div class="kpi-trend" id="trendCostoDiariaVaca">➡️ 0%</div>
-                                    </div>
-                                    <div class="kpi-card">
-                                        <h4>Costo total diario</h4>
-                                        <div class="kpi-value" id="kpiCostoTotalDiario">$0</div>
-                                        <div class="kpi-trend" id="trendCostoTotalDiario">➡️ 0%</div>
-                                    </div>
+                                    <div class="kpi-value" id="kpiVacasSecas">0</div>
+                                    <div class="kpi-trend" id="trendVacasSecas">➡️ 0%</div>
                                 </div>
                             </div>
-
-                            <!-- F) Consumos de dieta -->
-                            <div class="kpi-category">
-                                <h3 class="category-title">🌾 F) Consumos de dieta</h3>
-                                <div class="kpis-grid">
-                                    <div class="kpi-card">
-                                        <h4>Kilos concentrado sala</h4>
-                                        <div class="kpi-value" id="kpiConcentrado">0 kg</div>
-                                        <div class="kpi-trend" id="trendConcentrado">➡️ 0%</div>
+                            
+                            <!-- Costos -->
+                            <div class="kpi-card valor" data-kpi="costoDiariaLitro">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">💵 Costo diario/litro</div>
                                     </div>
-                                    <div class="kpi-card">
-                                        <h4>Kilos ensilaje maíz</h4>
-                                        <div class="kpi-value" id="kpiEnsilaje">0 kg</div>
-                                        <div class="kpi-trend" id="trendEnsilaje">➡️ 0%</div>
-                                    </div>
-                                    <div class="kpi-card">
-                                        <h4>Kilos otros forrajes</h4>
-                                        <div class="kpi-value" id="kpiOtrosForrajes">0 kg</div>
-                                        <div class="kpi-trend" id="trendOtrosForrajes">➡️ 0%</div>
-                                    </div>
-                                    <div class="kpi-card">
-                                        <h4>Kilos sales y aditivos</h4>
-                                        <div class="kpi-value" id="kpiSalesAditivos">0 kg</div>
-                                        <div class="kpi-trend" id="trendSalesAditivos">➡️ 0%</div>
-                                    </div>
-                                    <div class="kpi-card">
-                                        <h4>Kilos fibra (soya)</h4>
-                                        <div class="kpi-value" id="kpiFibra">0 kg</div>
-                                        <div class="kpi-trend" id="trendFibra">➡️ 0%</div>
-                                    </div>
-                                    <div class="kpi-card">
-                                        <h4>Silo maíz / vaca</h4>
-                                        <div class="kpi-value" id="kpiSiloVaca">0 kg</div>
-                                        <div class="kpi-trend" id="trendSiloVaca">➡️ 0%</div>
-                                    </div>
+                                    <div class="kpi-value" id="kpiCostoDiariaLitro">$0</div>
+                                    <div class="kpi-trend" id="trendCostoDiariaLitro">➡️ 0%</div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="charts-grid">
-                            <div class="chart-container">
-                                <h3>Producción de Leche - Últimos 7 días</h3>
-                                <canvas id="chartProduccion"></canvas>
+                            <div class="kpi-card valor" data-kpi="costoDiariaVaca">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🐄 Costo diario/vaca</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiCostoDiariaVaca">$0</div>
+                                    <div class="kpi-trend" id="trendCostoDiariaVaca">➡️ 0%</div>
+                                </div>
                             </div>
-                            <div class="chart-container">
-                                <h3>Consumo de Alimento - Últimos 7 días</h3>
-                                <canvas id="chartAlimentacion"></canvas>
+                            <div class="kpi-card valor" data-kpi="costoTotalDiario">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">💸 Costo total diario</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiCostoTotalDiario">$0</div>
+                                    <div class="kpi-trend" id="trendCostoTotalDiario">➡️ 0%</div>
+                                </div>
                             </div>
-                            <div class="chart-container">
-                                <h3>Evolución del Rebaño</h3>
-                                <canvas id="chartRebaño"></canvas>
+                            
+                            <!-- Consumos -->
+                            <div class="kpi-card valor" data-kpi="ensilaje">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🌾 Ensilaje</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiEnsilaje">0 kg</div>
+                                    <div class="kpi-trend" id="trendEnsilaje">➡️ 0%</div>
+                                </div>
                             </div>
-                            <div class="chart-container">
-                                <h3>Distribución de Costos</h3>
-                                <canvas id="chartCostos"></canvas>
+                            <div class="kpi-card valor" data-kpi="otrosForrajes">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🌿 Otros forrajes</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiOtrosForrajes">0 kg</div>
+                                    <div class="kpi-trend" id="trendOtrosForrajes">➡️ 0%</div>
+                                </div>
+                            </div>
+                            <div class="kpi-card valor" data-kpi="salesAditivos">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🧂 Sales y aditivos</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiSalesAditivos">0 kg</div>
+                                    <div class="kpi-trend" id="trendSalesAditivos">➡️ 0%</div>
+                                </div>
+                            </div>
+                            <div class="kpi-card valor" data-kpi="fibra">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🌱 Fibra</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiFibra">0 kg</div>
+                                    <div class="kpi-trend" id="trendFibra">➡️ 0%</div>
+                                </div>
+                            </div>
+                            <div class="kpi-card valor" data-kpi="siloVaca">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🥛 Silo/vaca</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiSiloVaca">0 kg</div>
+                                    <div class="kpi-trend" id="trendSiloVaca">➡️ 0%</div>
+                                </div>
                             </div>
                         </div>
                     </div>

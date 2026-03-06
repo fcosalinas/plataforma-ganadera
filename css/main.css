@@ -1,45 +1,75 @@
 /* Main CSS - Estilos principales y base */
 :root {
-    /* Colores principales */
-    --primary-color: #2563eb;
-    --primary-dark: #1d4ed8;
-    --primary-light: #3b82f6;
-    --secondary-color: #10b981;
-    --success-color: #22c55e;
+    /* Colores principales - Modernos */
+    --primary-color: #4f46e5;
+    --primary-dark: #4338ca;
+    --primary-light: #6366f1;
+    --secondary-color: #06b6d4;
+    --success-color: #10b981;
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
     --info-color: #3b82f6;
     
-    /* Colores neutros */
-    --gray-50: #f9fafb;
-    --gray-100: #f3f4f6;
-    --gray-200: #e5e7eb;
-    --gray-300: #d1d5db;
-    --gray-400: #9ca3af;
-    --gray-500: #6b7280;
-    --gray-600: #4b5563;
-    --gray-700: #374151;
-    --gray-800: #1f2937;
-    --gray-900: #111827;
+    /* Colores de acento modernos */
+    --accent-blue: #3b82f6;
+    --accent-green: #10b981;
+    --accent-orange: #f97316;
+    --accent-purple: #8b5cf6;
+    --accent-pink: #ec4899;
     
-    /* Espaciado */
-    --spacing-xs: 0.25rem;
-    --spacing-sm: 0.5rem;
-    --spacing-md: 1rem;
-    --spacing-lg: 1.5rem;
-    --spacing-xl: 2rem;
-    --spacing-2xl: 3rem;
+    /* Colores oscuros - Tema oscuro mejorado */
+    --bg-dark: #0a0a0a; /* Gris muy oscuro casi negro */
+    --bg-card: #1a1a1a; /* Gris oscuro */
+    --bg-card-hover: #252525; /* Gris medio oscuro */
+    --bg-valor: #1f1f1f; /* 10% más claro que bg-dark */
+    --bg-valor-hover: #2a2a2a; /* 15% más claro que bg-dark */
+    --bg-valor-positive: #1a2a1a; /* 10% más verde */
+    --bg-valor-negative: #2a1a1a; /* 10% más rojo */
+    --bg-evolutivo: #151515; /* Gris oscuro específico para evolutivo */
+    --bg-evolutivo-hover: #1f1f1f; /* Hover para evolutivo */
+    --text-primary: #ffffff; /* Blanco puro para máximo contraste */
+    --text-secondary: #e0e0e0; /* Gris claro para buen contraste */
+    --text-muted: #a0a0a0; /* Gris medio para texto secundario */
+    --border-dark: #333333; /* Gris medio para bordes visibles */
     
-    /* Bordes y sombras */
+    /* Colores neutros oscuros actualizados */
+    --gray-50: #1a1a1a;
+    --gray-100: #252525;
+    --gray-200: #333333;
+    --gray-300: #404040;
+    --gray-400: #525252;
+    --gray-500: #a0a0a0;
+    --gray-600: #b3b3b3;
+    --gray-700: #d4d4d4;
+    --gray-800: #e0e0e0;
+    --gray-900: #ffffff;
+    
+    /* Gradientes modernos oscuros */
+    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --gradient-success: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    --gradient-info: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    
+    /* Espaciado compacto */
+    --spacing-xs: 0.125rem;
+    --spacing-sm: 0.25rem;
+    --spacing-md: 0.5rem;
+    --spacing-lg: 0.75rem;
+    --spacing-xl: 1rem;
+    --spacing-2xl: 1.5rem;
+    
+    /* Bordes y sombras modernas */
     --border-radius: 0.5rem;
     --border-radius-lg: 0.75rem;
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --border-radius-xl: 1rem;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.4), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
     
-    /* Tipografía */
-    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    /* Tipografía moderna */
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
     --font-size-xs: 0.75rem;
     --font-size-sm: 0.875rem;
     --font-size-base: 1rem;
@@ -47,6 +77,13 @@
     --font-size-xl: 1.25rem;
     --font-size-2xl: 1.5rem;
     --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+    --font-size-5xl: 3rem;
+    
+    /* Animaciones */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.25s ease;
+    --transition-slow: 0.35s ease;
 }
 
 /* Reset y base */
@@ -64,33 +101,64 @@ html {
 body {
     font-family: var(--font-family);
     line-height: 1.6;
-    color: var(--gray-800);
-    background-color: var(--gray-50);
+    color: var(--text-primary);
+    background-color: var(--bg-dark);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+}
+
+/* Regla general para todos los divs - fondo oscuro por defecto */
+div {
+    background-color: inherit;
+}
+
+/* Excepciones - tarjetas y elementos específicos mantienen su propio fondo */
+.kpi-card,
+.card,
+.modal-content,
+.table-container,
+.data-table {
+    background-color: var(--bg-card);
+}
+
+/* Tarjetas VALOR con sus colores específicos */
+.kpi-card.valor {
+    background-color: var(--bg-valor);
+}
+
+.kpi-card.valor.trend-positive {
+    background-color: var(--bg-valor-positive);
+}
+
+.kpi-card.valor.trend-negative {
+    background-color: var(--bg-valor-negative);
 }
 
 /* Layout */
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 var(--spacing-md);
+    padding: 0;
+    background-color: var(--bg-dark);
 }
 
 /* Header */
 .header {
-    background: white;
+    background: var(--bg-dark);
     box-shadow: var(--shadow);
     position: sticky;
     top: 0;
     z-index: 100;
+    margin-bottom: 0;
 }
 
+/* Header container con padding oscuro */
 .header .container {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: var(--spacing-md) var(--spacing-lg);
+    background-color: var(--bg-dark);
 }
 
 .header h1 {
@@ -133,14 +201,16 @@ body {
     box-shadow: var(--shadow);
 }
 
-/* Main content */
+/* Main content con padding oscuro */
 main {
     padding: var(--spacing-lg) 0;
     min-height: calc(100vh - 80px);
+    background-color: var(--bg-dark);
 }
 
 #app-content {
     animation: fadeIn 0.3s ease-in-out;
+    background-color: var(--bg-dark);
 }
 
 @keyframes fadeIn {
@@ -157,10 +227,12 @@ main {
 /* Secciones */
 .section {
     display: none;
+    padding: 0;
 }
 
 .section.active {
     display: block;
+    padding: 0;
 }
 
 /* Botones */
@@ -296,7 +368,7 @@ main {
 
 /* Cards */
 .card {
-    background: white;
+    background: var(--bg-card);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow);
     padding: var(--spacing-lg);
@@ -329,7 +401,7 @@ main {
 /* Tables */
 .table-container {
     overflow-x: auto;
-    background: white;
+    background: var(--bg-card);
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow);
 }
@@ -376,7 +448,7 @@ main {
 }
 
 .modal-content {
-    background: white;
+    background: var(--bg-card);
     margin: 5% auto;
     padding: var(--spacing-xl);
     border-radius: var(--border-radius-lg);
@@ -526,34 +598,34 @@ main {
     color: var(--gray-500);
 }
 
-/* Spacing utilities */
-.m-0 { margin: 0; }
-.m-1 { margin: var(--spacing-xs); }
-.m-2 { margin: var(--spacing-sm); }
-.m-3 { margin: var(--spacing-md); }
-.m-4 { margin: var(--spacing-lg); }
-.m-5 { margin: var(--spacing-xl); }
+/* Spacing utilities con fondos oscuros */
+.m-0 { margin: 0; background-color: var(--bg-dark); }
+.m-1 { margin: var(--spacing-xs); background-color: var(--bg-dark); }
+.m-2 { margin: var(--spacing-sm); background-color: var(--bg-dark); }
+.m-3 { margin: var(--spacing-md); background-color: var(--bg-dark); }
+.m-4 { margin: var(--spacing-lg); background-color: var(--bg-dark); }
+.m-5 { margin: var(--spacing-xl); background-color: var(--bg-dark); }
 
-.p-0 { padding: 0; }
-.p-1 { padding: var(--spacing-xs); }
-.p-2 { padding: var(--spacing-sm); }
-.p-3 { padding: var(--spacing-md); }
-.p-4 { padding: var(--spacing-lg); }
-.p-5 { padding: var(--spacing-xl); }
+.p-0 { padding: 0; background-color: var(--bg-dark); }
+.p-1 { padding: var(--spacing-xs); background-color: var(--bg-dark); }
+.p-2 { padding: var(--spacing-sm); background-color: var(--bg-dark); }
+.p-3 { padding: var(--spacing-md); background-color: var(--bg-dark); }
+.p-4 { padding: var(--spacing-lg); background-color: var(--bg-dark); }
+.p-5 { padding: var(--spacing-xl); background-color: var(--bg-dark); }
 
-.mb-0 { margin-bottom: 0; }
-.mb-1 { margin-bottom: var(--spacing-xs); }
-.mb-2 { margin-bottom: var(--spacing-sm); }
-.mb-3 { margin-bottom: var(--spacing-md); }
-.mb-4 { margin-bottom: var(--spacing-lg); }
-.mb-5 { margin-bottom: var(--spacing-xl); }
+.mb-0 { margin-bottom: 0; background-color: var(--bg-dark); }
+.mb-1 { margin-bottom: var(--spacing-xs); background-color: var(--bg-dark); }
+.mb-2 { margin-bottom: var(--spacing-sm); background-color: var(--bg-dark); }
+.mb-3 { margin-bottom: var(--spacing-md); background-color: var(--bg-dark); }
+.mb-4 { margin-bottom: var(--spacing-lg); background-color: var(--bg-dark); }
+.mb-5 { margin-bottom: var(--spacing-xl); background-color: var(--bg-dark); }
 
-.mt-0 { margin-top: 0; }
-.mt-1 { margin-top: var(--spacing-xs); }
-.mt-2 { margin-top: var(--spacing-sm); }
-.mt-3 { margin-top: var(--spacing-md); }
-.mt-4 { margin-top: var(--spacing-lg); }
-.mt-5 { margin-top: var(--spacing-xl); }
+.mt-0 { margin-top: 0; background-color: var(--bg-dark); }
+.mt-1 { margin-top: var(--spacing-xs); background-color: var(--bg-dark); }
+.mt-2 { margin-top: var(--spacing-sm); background-color: var(--bg-dark); }
+.mt-3 { margin-top: var(--spacing-md); background-color: var(--bg-dark); }
+.mt-4 { margin-top: var(--spacing-lg); background-color: var(--bg-dark); }
+.mt-5 { margin-top: var(--spacing-xl); background-color: var(--bg-dark); }
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -625,6 +697,15 @@ main {
 }
 
 /* Dashboard Styles */
+.dashboard-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
 .dashboard-header {
     display: flex;
     justify-content: space-between;
@@ -637,27 +718,54 @@ main {
 .fundo-selector {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
 }
 
 .fundo-selector label {
     font-weight: 600;
-    color: var(--gray-700);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    white-space: nowrap;
 }
 
 .fundo-selector select {
-    padding: var(--spacing-sm) var(--spacing-md);
-    border: 1px solid var(--gray-300);
-    border-radius: var(--radius-md);
-    background: white;
-    font-size: 14px;
-    min-width: 150px;
+    flex: 1;
+    max-width: 300px;
+    padding: var(--spacing-md) var(--spacing-lg);
+    border: 2px solid var(--border-light);
+    border-radius: var(--radius-lg);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: var(--font-size-base);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right var(--spacing-md) center;
+    background-size: 20px;
+    padding-right: calc(var(--spacing-lg) + 24px);
+    min-width: 200px;
+}
+
+.fundo-selector select:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 8px rgba(99, 102, 241, 0.15);
+    transform: translateY(-1px);
 }
 
 .fundo-selector select:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1), 0 4px 8px rgba(99, 102, 241, 0.15);
+}
+
+.fundo-selector select:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Tabla de Datos Styles */
@@ -720,7 +828,7 @@ main {
 .data-table {
     width: 100%;
     border-collapse: collapse;
-    background: white;
+    background: var(--bg-card);
 }
 
 .data-table th {
