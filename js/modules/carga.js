@@ -9,15 +9,42 @@ class CargaModule {
         try {
             console.log('🚀 Inicializando módulo de carga...');
             
+            // Verificar si existe el formulario original
             this.form = document.getElementById('formDatos');
-            this.setupEventListeners();
-            this.setupAutoCalculations();
-            this.setFechaActual();
             
-            console.log('✅ Módulo de carga inicializado');
+            if (this.form) {
+                // Modo original: formulario de captura
+                this.setupEventListeners();
+                this.setupAutoCalculations();
+                this.setFechaActual();
+                console.log('✅ Módulo de carga inicializado en modo formulario');
+            } else {
+                // Modo nuevo: integración de datos
+                this.setupDataIntegrationMode();
+                console.log('✅ Módulo de carga inicializado en modo integración');
+            }
+            
         } catch (error) {
             console.error('❌ Error al inicializar módulo de carga:', error);
+            throw error;
         }
+    }
+
+    /**
+     * Configurar modo de integración de datos
+     */
+    setupDataIntegrationMode() {
+        // El modo de integración usa las funciones globales de data-test.js
+        // No necesita configurar eventos del formulario
+        
+        // Actualizar estado inicial
+        if (typeof actualizarEstado === 'function') {
+            setTimeout(() => {
+                actualizarEstado();
+            }, 500);
+        }
+        
+        console.log('📊 Modo de integración de datos activado');
     }
 
     waitForElement(selector) {
@@ -44,6 +71,12 @@ class CargaModule {
     }
 
     setupEventListeners() {
+        // Verificar si existe el formulario antes de agregar eventos
+        if (!this.form) {
+            console.log('📊 No hay formulario disponible, omitiendo setupEventListeners');
+            return;
+        }
+
         // Submit del formulario
         this.form.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -67,6 +100,12 @@ class CargaModule {
     }
 
     setupAutoCalculations() {
+        // Verificar si existe el formulario antes de configurar cálculos
+        if (!this.form) {
+            console.log('📊 No hay formulario disponible, omitiendo setupAutoCalculations');
+            return;
+        }
+
         // Campos que disparan cálculos automáticos
         const camposCalculo = [
             'vacasEstanque', 'vacasDescarte', 'ingresoVacas', 'salidaVacas',
@@ -145,16 +184,16 @@ class CargaModule {
     }
 
     setFechaActual() {
+        // Verificar si existe el formulario antes de configurar fecha
+        if (!this.form) {
+            console.log('📊 No hay formulario disponible, omitiendo setFechaActual');
+            return;
+        }
+
         const fechaInput = document.getElementById('fecha');
         if (fechaInput && !fechaInput.value) {
             const hoy = new Date().toISOString().split('T')[0];
             fechaInput.value = hoy;
-            
-            // Establecer día del mes
-            const diaInput = document.getElementById('dia');
-            if (diaInput && !diaInput.value) {
-                diaInput.value = new Date().getDate();
-            }
         }
     }
 

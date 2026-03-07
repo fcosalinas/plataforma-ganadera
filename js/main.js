@@ -1,33 +1,45 @@
 // Main Orchestrator - Plataforma Ganadera Digital
 class PlataformaGanadera {
     constructor() {
-        this.currentSection = 'carga';
+        this.currentSection = 'dashboard'; // Cambiado a 'dashboard' para que coincida con el HTML
         this.modules = {};
         this.init();
     }
 
     async init() {
         try {
+            console.log('🚀 Iniciando Plataforma Ganadera...');
+            
             // Inicializar módulos
             await this.initModules();
+            console.log('📦 Módulos inicializados');
             
             // Configurar navegación
             this.setupNavigation();
+            console.log('🧭 Navegación configurada');
             
             // Cargar datos de ejemplo si no existen
             if (!StorageUtils.hasData()) {
+                console.log('📂 Cargando datos de ejemplo...');
                 StorageUtils.loadExampleData();
+                console.log('✅ Datos de ejemplo cargados');
+            } else {
+                console.log('📂 Datos ya existen en localStorage');
             }
             
-            // Inicializar módulo de carga por defecto
-            if (this.modules.carga) {
-                await this.modules.carga.init();
+            // Inicializar dashboard automáticamente al cargar
+            console.log('📊 Inicializando dashboard automáticamente...');
+            if (this.modules.dashboard) {
+                console.log('📊 Módulo dashboard encontrado, iniciando...');
+                await this.modules.dashboard.init();
+                console.log('✅ Dashboard inicializado');
+            } else {
+                console.error('❌ Módulo dashboard no encontrado');
             }
             
-            // Inicializar módulo de tabla
-            if (this.modules.tabla) {
-                await this.modules.tabla.init();
-            }
+            // Actualizar botón de navegación activo
+            this.updateActiveNavButton();
+            console.log('🔄 Botón de navegación actualizado');
             
             console.log('✅ Plataforma Ganadera inicializada correctamente');
         } catch (error) {
@@ -36,12 +48,55 @@ class PlataformaGanadera {
     }
 
     async initModules() {
-        // Inicializar cada módulo
-        this.modules.carga = new CargaModule();
-        this.modules.dashboard = new DashboardModule();
-        this.modules.tabla = new TablaModule();
-        this.modules.benchmark = new BenchmarkModule();
-        this.modules.historial = new HistorialModule();
+        console.log('📦 initModules(): Iniciando inicialización de módulos...');
+        try {
+            // Inicializar cada módulo con manejo de errores
+            console.log('📦 Creando CargaModule...');
+            this.modules.carga = new CargaModule();
+            console.log('📦 CargaModule creado');
+            
+            console.log('📦 Creando DashboardModule...');
+            this.modules.dashboard = new DashboardModule();
+            console.log('📦 DashboardModule creado');
+            
+            console.log('📦 Creando TablaModule...');
+            this.modules.tabla = new TablaModule();
+            console.log('📦 TablaModule creado');
+            
+            // Inicializar módulos opcionales con try-catch individual
+            try {
+                console.log('📦 Creando BenchmarkModule...');
+                this.modules.benchmark = new BenchmarkModule();
+                console.log('📦 BenchmarkModule creado');
+            } catch (error) {
+                console.warn('⚠️ BenchmarkModule no disponible:', error.message);
+            }
+            
+            try {
+                console.log('📦 Creando HistorialModule...');
+                this.modules.historial = new HistorialModule();
+                console.log('📦 HistorialModule creado');
+            } catch (error) {
+                console.warn('⚠️ HistorialModule no disponible:', error.message);
+            }
+            
+            console.log('📦 Todos los módulos creados exitosamente');
+        } catch (error) {
+            console.error('❌ Error en initModules():', error);
+            console.error('❌ Stack trace:', error.stack);
+            throw error;
+        }
+    }
+
+    updateActiveNavButton() {
+        // Actualizar botón activo basado en currentSection
+        const navButtons = document.querySelectorAll('.nav-btn');
+        navButtons.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.section === this.currentSection) {
+                btn.classList.add('active');
+            }
+        });
     }
 
     setupNavigation() {

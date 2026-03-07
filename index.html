@@ -7,245 +7,14 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/components.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        /* Estilos de diagnóstico temporal */
-        body { 
-            font-family: Arial, sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background: #f5f5f5;
-        }
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-        }
-        .header { 
-            background: white; 
-            padding: 20px; 
-            margin-bottom: 20px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-radius: 8px;
-        }
-        .nav { 
-            display: flex; 
-            gap: 10px; 
-            margin-top: 15px;
-        }
-        .nav-btn { 
-            padding: 10px 20px; 
-            border: none; 
-            background: #e0e0e0; 
-            cursor: pointer; 
-            border-radius: 5px;
-            transition: all 0.3s;
-        }
-        .nav-btn:hover { 
-            background: #d0d0d0; 
-        }
-        .nav-btn.active { 
-            background: #2563eb; 
-            color: white; 
-        }
-        .section { 
-            display: none; 
-            background: white; 
-            padding: 30px; 
-            border-radius: 8px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .section.active { 
-            display: block; 
-        }
-        .form-group { 
-            margin-bottom: 15px; 
-        }
-        .form-group label { 
-            display: block; 
-            margin-bottom: 5px; 
-            font-weight: bold;
-        }
-        .form-group input, .form-group select, .form-group textarea { 
-            width: 100%; 
-            padding: 10px; 
-            border: 1px solid #ddd; 
-            border-radius: 5px; 
-            box-sizing: border-box;
-        }
-        .data-section { 
-            margin-bottom: 30px; 
-            padding: 20px; 
-            border: 1px solid #e0e0e0; 
-            border-radius: 8px;
-        }
-        .data-section h3 { 
-            margin-bottom: 20px; 
-            color: #333;
-        }
-        .grid-3 { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 15px; 
-        }
-        .btn { 
-            padding: 12px 24px; 
-            border: none; 
-            border-radius: 5px; 
-            cursor: pointer; 
-            font-weight: bold;
-        }
-        .btn-primary { 
-            background: #2563eb; 
-            color: white; 
-        }
-        .btn-secondary { 
-            background: #6b7280; 
-            color: white; 
-        }
-        .form-actions { 
-            display: flex; 
-            gap: 10px; 
-            margin-top: 20px; 
-        }
-        .kpis-grid { 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 20px; 
-            margin-bottom: 30px; 
-        }
-        .kpi-card { 
-            background: #f8f9fa; 
-            padding: 20px; 
-            border-radius: 8px; 
-            text-align: center; 
-            border-left: 4px solid #2563eb;
-        }
-        .kpi-value { 
-            font-size: 2em; 
-            font-weight: bold; 
-            color: #2563eb; 
-        }
-        .charts-grid { 
-            display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
-            gap: 20px; 
-        }
-        .chart-container { 
-            background: #f8f9fa; 
-            padding: 20px; 
-            border-radius: 8px; 
-            height: 300px; 
-        }
-        .dashboard-layout { 
-            display: grid; 
-            grid-template-columns: 1fr 300px; 
-            gap: 20px; 
-        }
-        .alerts-panel { 
-            background: #f8f9fa; 
-            padding: 20px; 
-            border-radius: 8px; 
-        }
-        .benchmark-container { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 8px; 
-        }
-        .benchmark-controls { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 15px; 
-            margin-bottom: 30px; 
-            padding: 20px; 
-            background: #f8f9fa; 
-            border-radius: 8px; 
-        }
-        .benchmark-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-        }
-        .benchmark-table th, .benchmark-table td { 
-            padding: 12px; 
-            text-align: left; 
-            border-bottom: 1px solid #e0e0e0; 
-        }
-        .benchmark-table th { 
-            background: #f8f9fa; 
-            font-weight: bold; 
-        }
-        .historial-container { 
-            background: white; 
-            padding: 30px; 
-            border-radius: 8px; 
-        }
-        .filters { 
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 15px; 
-            margin-bottom: 30px; 
-            padding: 20px; 
-            background: #f8f9fa; 
-            border-radius: 8px; 
-        }
-        .data-table { 
-            width: 100%; 
-            border-collapse: collapse; 
-        }
-        .data-table th, .data-table td { 
-            padding: 12px; 
-            text-align: left; 
-            border-bottom: 1px solid #e0e0e0; 
-        }
-        .data-table th { 
-            background: #f8f9fa; 
-            font-weight: bold; 
-        }
-        .modal { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.5); 
-            z-index: 1000; 
-        }
-        .modal-content { 
-            background: white; 
-            margin: 5% auto; 
-            padding: 30px; 
-            border-radius: 8px; 
-            max-width: 800px; 
-        }
-        .close { 
-            float: right; 
-            font-size: 24px; 
-            cursor: pointer; 
-        }
-        .import-section {
-            margin-bottom: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border-left: 4px solid #2563eb;
-        }
-        
-        @media (max-width: 768px) {
-            .grid-3, .kpis-grid, .charts-grid, .dashboard-layout {
-                grid-template-columns: 1fr;
-            }
-            .benchmark-controls, .filters {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
 </head>
 <body>
     <header class="header">
         <div class="container">
             <h1>🐄 Plataforma Ganadera Digital</h1>
             <nav class="nav">
-                <button class="nav-btn active" data-section="carga">Carga de Datos</button>
-                <button class="nav-btn" data-section="dashboard">Dashboard</button>
+                <button class="nav-btn active" data-section="dashboard">Dashboard</button>
+                <button class="nav-btn" data-section="carga">Integración de Datos</button>
                 <button class="nav-btn" data-section="tabla">📋 Tabla de Datos</button>
                 <button class="nav-btn" data-section="benchmark">📊 Benchmark</button>
                 <button class="nav-btn" data-section="historial">Historial</button>
@@ -255,207 +24,8 @@
 
     <main class="container">
         <div id="app-content">
-            <!-- Vista inicial: Carga de Datos -->
-            <section id="carga" class="section active carga-container">
-                <h2>Registro Diario de Producción y Alimentación</h2>
-                <div class="import-section">
-                    <button type="button" class="btn btn-secondary" onclick="plataforma.importarDatosPlanillas()">
-                        📋 Importar Datos de Planillas Octubre
-                    </button>
-                    <small style="margin-left: 10px; color: #666;">Importa datos de Dollinco y Pitriuco desde las planillas manuales</small>
-                    <br><br>
-                    <input type="file" id="csvFile" accept=".csv" style="display: none;" onchange="if(window.plataforma?.modules?.carga) window.plataforma.modules.carga.importarCSV(event);">
-                    <button type="button" class="btn btn-primary" onclick="document.getElementById('csvFile').click()">
-                        📁 Importar Datos desde CSV
-                    </button>
-                    <small style="margin-left: 10px; color: #666;">Carga un mes completo de datos para un campo específico</small>
-                    <br><br>
-                    <button type="button" class="btn btn-success" onclick="if(window.plataforma?.modules?.carga) window.plataforma.modules.carga.generarDatosPrueba()">
-                        🎲 Generar Datos de Prueba
-                    </button>
-                    <small style="margin-left: 10px; color: #666;">Genera datos históricos completos (todos los días desde 01/07/2025 hasta 28/02/2026) para 7 empresas</small>
-                    <br><br>
-                    <button type="button" class="btn btn-warning" onclick="if(window.plataforma?.modules?.carga) window.plataforma.modules.carga.limpiarYRegenerarDatos()">
-                        🔄 Limpiar y Regenerar Todo
-                    </button>
-                    <small style="margin-left: 10px; color: #666;">Elimina todos los datos existentes y genera nuevos datos completos (todos los días desde 01/07/2025 hasta 28/02/2026)</small>
-                </div>
-                
-                <form id="formDatos" class="form-datos">
-                    <div class="form-header">
-                        <div class="form-group">
-                            <label for="fundo">Fundo:</label>
-                            <input type="text" id="fundo" required placeholder="Ej: Dollinco">
-                        </div>
-                        <div class="form-group">
-                            <label for="fecha">Fecha:</label>
-                            <input type="date" id="fecha" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="dia">Día del Mes:</label>
-                            <input type="number" id="dia" min="1" max="31" required>
-                        </div>
-                    </div>
-
-                    <div class="data-sections">
-                        <!-- VACAS -->
-                        <div class="data-section">
-                            <h3>🐄 VACAS</h3>
-                            <div class="grid-3">
-                                <div class="form-group">
-                                    <label for="vacasEstanque">Vacas en Estanque:</label>
-                                    <input type="number" id="vacasEstanque" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="vacasDescarte">Descarte:</label>
-                                    <input type="number" id="vacasDescarte" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="ingresoVacas">Ingreso Vacas:</label>
-                                    <input type="number" id="ingresoVacas" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="salidaVacas">Salida Vacas:</label>
-                                    <input type="number" id="salidaVacas" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="totalOrdeña">Total Ordeña:</label>
-                                    <input type="number" id="totalOrdeña" min="0" readonly required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- LECHE -->
-                        <div class="data-section">
-                            <h3>🥛 LECHE</h3>
-                            <div class="grid-3">
-                                <div class="form-group">
-                                    <label for="lecheAM">Leche AM (L):</label>
-                                    <input type="number" id="lecheAM" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="lechePM">Leche PM (L):</label>
-                                    <input type="number" id="lechePM" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="lecheTotal">Leche Total (L):</label>
-                                    <input type="number" id="lecheTotal" step="0.1" min="0" readonly required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="lecheTerneros">Leche Terneros (L):</label>
-                                    <input type="number" id="lecheTerneros" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="descartePersonal">Descarte Personal (L):</label>
-                                    <input type="number" id="descartePersonal" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="totalLecheDiaria">Total Leche Diaria (L):</label>
-                                    <input type="number" id="totalLecheDiaria" step="0.1" min="0" readonly required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="lechePlanta">Leche Planta (L):</label>
-                                    <input type="number" id="lechePlanta" step="0.1" min="0" readonly required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="promedioPorVaca">Promedio por Vaca (L):</label>
-                                    <input type="number" id="promedioPorVaca" step="0.1" min="0" readonly required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CONSUMO PASTOREO -->
-                        <div class="data-section">
-                            <h3>🌾 CONSUMO PASTOREO</h3>
-                            <div class="grid-3">
-                                <div class="form-group">
-                                    <label for="kilosMateriaSeca">Kilos Materia Seca/Vaca/Día:</label>
-                                    <input type="number" id="kilosMateriaSeca" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="potreroAM">Potrero AM:</label>
-                                    <input type="text" id="potreroAM" placeholder="Ej: Potrero 1">
-                                </div>
-                                <div class="form-group">
-                                    <label for="potreroPM">Potrero PM:</label>
-                                    <input type="text" id="potreroPM" placeholder="Ej: Potrero 2">
-                                </div>
-                                <div class="form-group">
-                                    <label for="potreroNoche">Potrero Noche/Macada:</label>
-                                    <input type="text" id="potreroNoche" placeholder="Ej: Potrero 3">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- SUPLEMENTOS -->
-                        <div class="data-section">
-                            <h3>🥄 SUPLEMENTOS</h3>
-                            <div class="grid-3">
-                                <div class="form-group">
-                                    <label for="kilosEnergia">Kilos Energía:</label>
-                                    <input type="number" id="kilosEnergia" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="kilosProteina">Kilos Proteína:</label>
-                                    <input type="number" id="kilosProteina" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="kilosAditivos">Kilos Aditivos:</label>
-                                    <input type="number" id="kilosAditivos" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="kilosSalesOtros">Kilos Sales y Otros:</label>
-                                    <input type="number" id="kilosSalesOtros" step="0.1" min="0" required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- FORRAJES SUPLEMENTARIOS -->
-                        <div class="data-section">
-                            <h3>🌿 FORRAJES SUPLEMENTARIOS</h3>
-                            <div class="grid-3">
-                                <div class="form-group">
-                                    <label for="kilosEnsilaje">Kilos Ensilaje:</label>
-                                    <input type="number" id="kilosEnsilaje" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="kilosHeno">Kilos Heno:</label>
-                                    <input type="number" id="kilosHeno" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="kilosOtrosForrajes">Kilos Otros Forrajes:</label>
-                                    <input type="number" id="kilosOtrosForrajes" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="kilosRacion">Kilos Ración:</label>
-                                    <input type="number" id="kilosRacion" step="0.1" min="0" required>
-                                </div>
-                                <div class="form-group">
-                                    <label for="totalDia">Total Día (kg):</label>
-                                    <input type="number" id="totalDia" step="0.1" min="0" readonly required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- OBSERVACIONES -->
-                        <div class="data-section">
-                            <h3>📝 OBSERVACIONES</h3>
-                            <div class="form-group">
-                                <label for="observaciones">Observaciones del Día:</label>
-                                <textarea id="observaciones" rows="3" placeholder="Notas importantes sobre el día..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Guardar Datos</button>
-                        <button type="reset" class="btn btn-secondary">Limpiar Formulario</button>
-                    </div>
-                </form>
-            </section>
-
-            <!-- Dashboard Section -->
-            <section id="dashboard" class="section">
+            <!-- Vista inicial: Dashboard -->
+            <section id="dashboard" class="section active">
                 <div class="dashboard-container">
                     <div class="dashboard-header">
                         <h1>Dashboard Ganadero</h1>
@@ -469,89 +39,23 @@
                                 <option value="todos">Todos los Fundos</option>
                             </select>
                         </div>
+                        
+                        <div class="fecha-container">
+                            <label for="fechaInicio">Desde:</label>
+                            <input type="date" id="fechaInicio" onchange="window.plataforma.modules.dashboard.filtrarPorFechas()">
+                            
+                            <label for="fechaFin">Hasta:</label>
+                            <input type="date" id="fechaFin" onchange="window.plataforma.modules.dashboard.filtrarPorFechas()">
+                            
+                            <button type="button" class="btn-reset-fechas" onclick="window.plataforma.modules.dashboard.resetearFechas()">Resetear</button>
+                        </div>
                     </div>
                     
                     <div class="kpis-container">
                         <!-- KPIs Directos - Sin Contenedores -->
                         <div class="kpis-grid">
                             <!-- Primera fila: 4 tarjetas de valor -->
-                            <div class="kpi-card valor" data-kpi="lechePlanta">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <div class="kpi-title">🏭 Leche planta</div>
-                                    </div>
-                                    <div class="kpi-value" id="kpiLechePlanta">0 L</div>
-                                    <div class="kpi-trend" id="trendLechePlanta">➡️ 0%</div>
-                                </div>
-                            </div>
-                            <div class="kpi-card valor" data-kpi="totalVacas">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <div class="kpi-title">🐄 Total vacas</div>
-                                    </div>
-                                    <div class="kpi-value" id="kpiTotalVacas">0</div>
-                                    <div class="kpi-trend" id="trendTotalVacas">➡️ 0%</div>
-                                </div>
-                            </div>
-                            <div class="kpi-card valor" data-kpi="vacasEntrantes">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <div class="kpi-title">📥 Vacas entrantes</div>
-                                    </div>
-                                    <div class="kpi-value" id="kpiVacasEntrantes">0</div>
-                                    <div class="kpi-trend" id="trendVacasEntrantes">➡️ 0%</div>
-                                </div>
-                            </div>
-                            <div class="kpi-card valor" data-kpi="vacasSalientes">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <div class="kpi-title">📤 Vacas salientes</div>
-                                    </div>
-                                    <div class="kpi-value" id="kpiVacasSalientes">0</div>
-                                    <div class="kpi-trend" id="trendVacasSalientes">➡️ 0%</div>
-                                </div>
-                            </div>
-                            
-                            <!-- Segunda fila: 3 tarjetas evolutivas -->
-                            <div class="kpi-card evolutivo" data-kpi="produccionDiaria">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <div class="kpi-title">🥛 Total leche diaria</div>
-                                        <div class="kpi-current-value" id="kpiProduccionDiaria">0 L</div>
-                                    </div>
-                                    <div class="kpi-chart">
-                                        <canvas class="chart-canvas" id="chart-kpi-produccionDiaria"></canvas>
-                                        <div class="chart-label" id="chart-label-produccionDiaria">0 L</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="kpi-card evolutivo" data-kpi="concentrado">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <div class="kpi-title">🌾 Consumo de alimento</div>
-                                        <div class="kpi-current-value" id="kpiConcentrado">0 kg</div>
-                                    </div>
-                                    <div class="kpi-chart">
-                                        <canvas class="chart-canvas" id="chart-kpi-concentrado"></canvas>
-                                        <div class="chart-label" id="chart-label-concentrado">0 kg</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="kpi-card evolutivo" data-kpi="proteina">
-                                <div class="kpi-content">
-                                    <div class="kpi-header">
-                                        <div class="kpi-title">🧪 Proteína</div>
-                                        <div class="kpi-current-value" id="kpiProteina">0%</div>
-                                    </div>
-                                    <div class="kpi-chart">
-                                        <canvas class="chart-canvas" id="chart-kpi-proteina"></canvas>
-                                        <div class="chart-label" id="chart-label-proteina">0%</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <!-- Resto de tarjetas de valor -->
-                            <div class="kpi-card valor" data-kpi="litrosVacaDia">
+                            <div class="kpi-card valor" data-kpi="lecheDiaria">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
                                         <div class="kpi-title">🥛 Leche diaria</div>
@@ -560,91 +64,129 @@
                                     <div class="kpi-trend" id="trendLecheDiaria">➡️ 0%</div>
                                 </div>
                             </div>
-                            
-                            <!-- Tercera fila: Vacas secas -->
-                            <div class="kpi-card valor" data-kpi="vacasSecas">
+                            <div class="kpi-card valor" data-kpi="litrosVacaDia">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
-                                        <div class="kpi-title">🔴 Vacas secas</div>
+                                        <div class="kpi-title">🐄 L/vaca/día</div>
                                     </div>
-                                    <div class="kpi-value" id="kpiVacasSecas">0</div>
-                                    <div class="kpi-trend" id="trendVacasSecas">➡️ 0%</div>
+                                    <div class="kpi-value" id="kpiLitrosVacaDia">0 L</div>
+                                    <div class="kpi-trend" id="trendLitrosVacaDia">➡️ 0%</div>
+                                </div>
+                            </div>
+                            <div class="kpi-card valor" data-kpi="vacasOrdeña">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">� Vacas ordeña hoy</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiVacasOrdeña">0</div>
+                                    <div class="kpi-trend" id="trendVacasOrdeña">➡️ 0%</div>
+                                </div>
+                            </div>
+                            <div class="kpi-card valor" data-kpi="costoDietaLitro">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">� Costo dieta/L</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiCostoDietaLitro">$0</div>
+                                    <div class="kpi-trend" id="trendCostoDietaLitro">➡️ 0%</div>
                                 </div>
                             </div>
                             
-                            <!-- Costos -->
-                            <div class="kpi-card valor" data-kpi="costoDiariaLitro">
+                            <!-- Segunda fila: 4 tarjetas evolutivas -->
+                            <div class="kpi-card evolutivo" data-kpi="produccionDiaria">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
-                                        <div class="kpi-title">💵 Costo diario/litro</div>
+                                        <div class="kpi-title">📈 Producción diaria</div>
                                     </div>
-                                    <div class="kpi-value" id="kpiCostoDiariaLitro">$0</div>
-                                    <div class="kpi-trend" id="trendCostoDiariaLitro">➡️ 0%</div>
+                                    <div class="kpi-chart">
+                                        <canvas class="chart-canvas" id="chart-kpi-produccionDiaria"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="kpi-card valor" data-kpi="costoDiariaVaca">
+                            <div class="kpi-card evolutivo" data-kpi="concentradoDiario">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
-                                        <div class="kpi-title">🐄 Costo diario/vaca</div>
+                                        <div class="kpi-title">🌾 Concentrado diario</div>
                                     </div>
-                                    <div class="kpi-value" id="kpiCostoDiariaVaca">$0</div>
-                                    <div class="kpi-trend" id="trendCostoDiariaVaca">➡️ 0%</div>
+                                    <div class="kpi-chart">
+                                        <canvas class="chart-canvas" id="chart-kpi-concentradoDiario"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="kpi-card valor" data-kpi="costoTotalDiario">
+                            <div class="kpi-card evolutivo" data-kpi="calidadLeche">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
-                                        <div class="kpi-title">💸 Costo total diario</div>
+                                        <div class="kpi-title">🧪 Calidad de leche</div>
                                     </div>
-                                    <div class="kpi-value" id="kpiCostoTotalDiario">$0</div>
-                                    <div class="kpi-trend" id="trendCostoTotalDiario">➡️ 0%</div>
+                                    <div class="kpi-chart">
+                                        <canvas class="chart-canvas" id="chart-kpi-calidadLeche"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <!-- Consumos -->
-                            <div class="kpi-card valor" data-kpi="ensilaje">
+                            <div class="kpi-card evolutivo" data-kpi="vacasOrdeñaEvol">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
-                                        <div class="kpi-title">🌾 Ensilaje</div>
+                                        <div class="kpi-title">📊 Vacas ordeña</div>
                                     </div>
-                                    <div class="kpi-value" id="kpiEnsilaje">0 kg</div>
-                                    <div class="kpi-trend" id="trendEnsilaje">➡️ 0%</div>
+                                    <div class="kpi-chart">
+                                        <canvas class="chart-canvas" id="chart-kpi-vacasOrdeñaEvol"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="kpi-card valor" data-kpi="otrosForrajes">
+                            <div class="kpi-card evolutivo" data-kpi="costoDieta">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
-                                        <div class="kpi-title">🌿 Otros forrajes</div>
+                                        <div class="kpi-title">💸 Costo dieta</div>
                                     </div>
-                                    <div class="kpi-value" id="kpiOtrosForrajes">0 kg</div>
-                                    <div class="kpi-trend" id="trendOtrosForrajes">➡️ 0%</div>
+                                    <div class="kpi-chart">
+                                        <canvas class="chart-canvas" id="chart-kpi-costoDieta"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="kpi-card valor" data-kpi="salesAditivos">
+                            <div class="kpi-card evolutivo" data-kpi="stockDiario">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
-                                        <div class="kpi-title">🧂 Sales y aditivos</div>
+                                        <div class="kpi-title">🌾 Stock alimento</div>
                                     </div>
-                                    <div class="kpi-value" id="kpiSalesAditivos">0 kg</div>
-                                    <div class="kpi-trend" id="trendSalesAditivos">➡️ 0%</div>
+                                    <div class="kpi-chart">
+                                        <canvas class="chart-canvas" id="chart-kpi-stockDiario"></canvas>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="kpi-card valor" data-kpi="fibra">
+                            <div class="kpi-card valor" data-kpi="ingresoEstimado">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
-                                        <div class="kpi-title">🌱 Fibra</div>
+                                        <div class="kpi-title">💵 Ingreso estimado</div>
                                     </div>
-                                    <div class="kpi-value" id="kpiFibra">0 kg</div>
-                                    <div class="kpi-trend" id="trendFibra">➡️ 0%</div>
+                                    <div class="kpi-value" id="kpiIngresoEstimado">$0</div>
+                                    <div class="kpi-trend" id="trendIngresoEstimado">➡️ 0%</div>
                                 </div>
                             </div>
-                            <div class="kpi-card valor" data-kpi="siloVaca">
+                            <div class="kpi-card valor" data-kpi="costoAlimentacion">
                                 <div class="kpi-content">
                                     <div class="kpi-header">
-                                        <div class="kpi-title">🥛 Silo/vaca</div>
+                                        <div class="kpi-title">� Costo alimentación</div>
                                     </div>
-                                    <div class="kpi-value" id="kpiSiloVaca">0 kg</div>
-                                    <div class="kpi-trend" id="trendSiloVaca">➡️ 0%</div>
+                                    <div class="kpi-value" id="kpiCostoAlimentacion">$0</div>
+                                    <div class="kpi-trend" id="trendCostoAlimentacion">➡️ 0%</div>
+                                </div>
+                            </div>
+                            <div class="kpi-card valor" data-kpi="margenEstimado">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">📈 Margen estimado</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiMargenEstimado">$0</div>
+                                    <div class="kpi-trend" id="trendMargenEstimado">➡️ 0%</div>
+                                </div>
+                            </div>
+                            <div class="kpi-card valor" data-kpi="stockUltimoDia">
+                                <div class="kpi-content">
+                                    <div class="kpi-header">
+                                        <div class="kpi-title">🌾 Stock último día</div>
+                                    </div>
+                                    <div class="kpi-value" id="kpiStockUltimoDia">0 kg</div>
+                                    <div class="kpi-trend" id="trendStockUltimoDia">➡️ 0%</div>
                                 </div>
                             </div>
                         </div>
@@ -662,47 +204,120 @@
                 </div>
             </section>
 
-            <!-- Tabla de Datos Section -->
-            <section id="tabla" class="section">
-                <div class="tabla-container">
-                    <div class="tabla-header">
-                        <h2>📋 Tabla de Datos</h2>
-                        <div class="tabla-controls">
-                            <div class="form-group">
-                                <label for="filtroFundo">Filtrar por Fundo:</label>
-                                <select id="filtroFundo">
-                                    <option value="todos">Todos los Fundos</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="filtroPeriodo">Período:</label>
-                                <select id="filtroPeriodo">
-                                    <option value="todos">Todo el tiempo</option>
-                                    <option value="7">Últimos 7 días</option>
-                                    <option value="30">Últimos 30 días</option>
-                                    <option value="90">Últimos 3 meses</option>
-                                </select>
-                            </div>
-                            <button class="btn btn-primary" onclick="window.plataforma.modules.tabla.exportarCSV()">📥 Exportar CSV</button>
-                            <button class="btn btn-secondary" onclick="window.plataforma.modules.tabla.limpiarFiltros()">🔄 Limpiar Filtros</button>
-                        </div>
-                    </div>
+            <!-- Integración de Datos Section -->
+            <section id="carga" class="section">
+                <div class="carga-container">
+                    <h2>📊 Integración de Datos</h2>
+                    <p class="section-description">Gestiona y carga datos para análisis de producción ganadera</p>
                     
-                    <div class="tabla-stats">
-                        <div class="stat-item">
-                            <span class="stat-label">Total Registros:</span>
-                            <span class="stat-value" id="totalRegistros">0</span>
+                    <div class="carga-actions">
+                        <div class="action-group">
+                            <h3>🧪 Datos de Prueba</h3>
+                            <p>Genera datos realistas para probar el sistema</p>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-primary" onclick="cargarDatosPrueba()">
+                                    🚀 Cargar Datos de Prueba
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="generarMuestraDatos()">
+                                    👁️ Generar Muestra
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="limpiarDatosCorruptos()">
+                                    🧹 Limpiar Datos Corruptos
+                                </button>
+                                <button type="button" class="btn btn-danger" onclick="limpiarDatos()">
+                                    🗑️ Limpiar Todos los Datos
+                                </button>
+                            </div>
+                            <div class="action-info">
+                                <small>
+                                    <strong>Período:</strong> 03/06/2023 al 28/02/2026 (1000 días)<br>
+                                    <strong>Fundos:</strong> Dollinco, Pitriuco<br>
+                                    <strong>Registros:</strong> 2000 totales
+                                </small>
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Fundos:</span>
-                            <span class="stat-value" id="totalFundos">0</span>
+
+                        <div class="action-group">
+                            <h3>📋 Gestión de Datos</h3>
+                            <p>Verifica y exporta los datos existentes</p>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-info" onclick="verificarDatos()">
+                                    🔍 Verificar Integridad
+                                </button>
+                                <button type="button" class="btn btn-info" onclick="mostrarEstadisticas()">
+                                    📈 Mostrar Estadísticas
+                                </button>
+                                <button type="button" class="btn btn-success" onclick="exportarDatos()">
+                                    📁 Exportar a CSV
+                                </button>
+                            </div>
+                            <div class="action-info">
+                                <small>
+                                    <strong>Nota:</strong> Abre la consola del navegador (F12) para ver detalles<br>
+                                    de las operaciones y estadísticas generadas.
+                                </small>
+                            </div>
                         </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Período:</span>
-                            <span class="stat-value" id="periodoMostrado">-</span>
+
+                        <div class="action-group">
+                            <h3>📊 Estado del Sistema</h3>
+                            <div id="estadoDatos" class="estado-panel">
+                                <div class="estado-item">
+                                    <span class="estado-label">Registros:</span>
+                                    <span class="estado-value" id="totalRegistros">Verificando...</span>
+                                </div>
+                                <div class="estado-item">
+                                    <span class="estado-label">Integridad:</span>
+                                    <span class="estado-value" id="estadoIntegridad">Verificando...</span>
+                                </div>
+                                <div class="estado-item">
+                                    <span class="estado-label">Última actualización:</span>
+                                    <span class="estado-value" id="ultimaActualizacion">N/A</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-outline" onclick="actualizarEstado()">
+                                🔄 Actualizar Estado
+                            </button>
                         </div>
                     </div>
 
+                    <div class="carga-info">
+                        <h3>ℹ️ Información del Sistema</h3>
+                        <div class="info-grid">
+                            <div class="info-card">
+                                <h4>📅 Período de Datos</h4>
+                                <p>1000 días de datos históricos desde junio 2023 hasta febrero 2026</p>
+                            </div>
+                            <div class="info-card">
+                                <h4>🏭 Fundos Simulados</h4>
+                                <p><strong>Dollinco:</strong> 120 vacas, 850 L/día<br>
+                                   <strong>Pitriuco:</strong> 95 vacas, 650 L/día</p>
+                            </div>
+                            <div class="info-card">
+                                <h4>📈 Métricas Incluidas</h4>
+                                <p>Producción, calidad (proteína/grasa), costos, alimentación, márgenes</p>
+                            </div>
+                            <div class="info-card">
+                                <h4>🎯 Características</h4>
+                                <p>Variaciones estacionales, eventos aleatorios, tendencias realistas</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tabla de Datos Section -->
+            <section id="tabla" class="section">
+                <div class="tabla-container">
+                    <h2>📋 Tabla de Datos</h2>
+                    <div class="tabla-controls">
+                        <div class="form-group">
+                            <label for="filtroFundo">Filtrar por Fundo:</label>
+                            <select id="filtroFundo">
+                                <option value="todos">Todos los Fundos</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="tabla-wrapper">
                         <table class="data-table" id="tablaDatos">
                             <thead>
@@ -724,114 +339,42 @@
                             </tbody>
                         </table>
                     </div>
-
-                    <div class="tabla-pagination">
-                        <div class="pagination-info">
-                            <span id="paginationInfo">Mostrando 0 de 0 registros</span>
-                        </div>
-                        <div class="pagination-controls">
-                            <button class="btn btn-sm" onclick="window.plataforma.modules.tabla.paginaAnterior()" id="btnAnterior">⬅️ Anterior</button>
-                            <span id="paginaActual">Página 1</span>
-                            <button class="btn btn-sm" onclick="window.plataforma.modules.tabla.paginaSiguiente()" id="btnSiguiente">Siguiente ➡️</button>
-                        </div>
-                    </div>
                 </div>
             </section>
 
             <!-- Benchmark Section -->
             <section id="benchmark" class="section">
                 <div class="benchmark-container">
-                    <h2>📊 Benchmark entre Productores</h2>
-                    
+                    <h2>📊 Benchmark</h2>
                     <div class="benchmark-controls">
                         <div class="form-group">
-                            <label for="benchmarkPeriod">Período de Análisis:</label>
-                            <select id="benchmarkPeriod">
-                                <option value="7">Últimos 7 días</option>
-                                <option value="30">Últimos 30 días</option>
-                                <option value="90">Últimos 3 meses</option>
-                                <option value="365">Último año</option>
+                            <label for="benchmarkFundo">Fundo:</label>
+                            <select id="benchmarkFundo">
+                                <option value="todos">Todos los Fundos</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label for="benchmarkMetric">Métrica Principal:</label>
-                            <select id="benchmarkMetric">
-                                <option value="produccion">Producción Total (L/día)</option>
-                                <option value="promedio">Promedio por Vaca (L/vaca)</option>
-                                <option value="eficiencia">Eficiencia Forraje (L/kg)</option>
-                                <option value="rebaño">Tamaño de Rebaño</option>
-                            </select>
-                        </div>
-                        <button class="btn btn-primary" onclick="plataforma.actualizarBenchmark()">Actualizar Benchmark</button>
                     </div>
-
-                    <div class="benchmark-layout">
-                        <!-- Tabla Comparativa -->
-                        <div class="benchmark-table-container">
-                            <h3>🏆 Ranking de Productores</h3>
-                            <table class="benchmark-table">
-                                <thead>
-                                    <tr>
-                                        <th>Posición</th>
-                                        <th>Fundo/Productor</th>
-                                        <th>Producción Diaria (L)</th>
-                                        <th>Promedio/Vaca (L)</th>
-                                        <th>Vacas Ordeña</th>
-                                        <th>Forrajes (kg/día)</th>
-                                        <th>Eficiencia (L/kg)</th>
-                                        <th>Tendencia</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="benchmarkTableBody">
-                                    <!-- Datos se cargarán dinámicamente -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- Gráficos Comparativos vs Promedio -->
-                        <div class="benchmark-charts">
-                            <div class="chart-container">
-                                <h3>📈 Producción vs Promedio del Grupo</h3>
-                                <canvas id="benchmarkProduccionChart"></canvas>
-                            </div>
-                            <div class="chart-container">
-                                <h3>🥛 Eficiencia por Vaca vs Promedio</h3>
-                                <canvas id="benchmarkEficienciaChart"></canvas>
-                            </div>
-                            <div class="chart-container">
-                                <h3>🌾 Consumo de Forrajes vs Promedio</h3>
-                                <canvas id="benchmarkForrajesChart"></canvas>
-                            </div>
-                            <div class="chart-container">
-                                <h3>📊 Posicionamiento Relativo</h3>
-                                <canvas id="benchmarkDistribucionChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Análisis Detallado basado en mejores performers -->
-                    <div class="benchmark-analysis">
-                        <h3>📋 Análisis de Oportunidades</h3>
-                        <div class="analysis-grid">
-                            <div class="analysis-card">
-                                <h4>🏆 Mejores Prácticas (Top Performers)</h4>
-                                <div id="mejoresPracticas">
-                                    <!-- Se cargarán dinámicamente basado en los mejores -->
-                                </div>
-                            </div>
-                            <div class="analysis-card">
-                                <h4>⚠️ Áreas de Mejora (vs Líderes)</h4>
-                                <div id="areasMejora">
-                                    <!-- Se cargarán dinámicamente comparando con líderes -->
-                                </div>
-                            </div>
-                            <div class="analysis-card">
-                                <h4>🎯 Recomendaciones Personalizadas</h4>
-                                <div id="recomendaciones">
-                                    <!-- Se cargarán dinámicamente según gaps -->
-                                </div>
-                            </div>
-                        </div>
+                    <div class="benchmark-content">
+                        <table class="benchmark-table">
+                            <thead>
+                                <tr>
+                                    <th>Métrica</th>
+                                    <th>Valor Actual</th>
+                                    <th>Promedio</th>
+                                    <th>Mejor</th>
+                                    <th>Peor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Leche/Vaca/Día</td>
+                                    <td>0 L</td>
+                                    <td>0 L</td>
+                                    <td>0 L</td>
+                                    <td>0 L</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
@@ -839,37 +382,30 @@
             <!-- Historial Section -->
             <section id="historial" class="section">
                 <div class="historial-container">
-                    <h2>Historial de Registros</h2>
-                    
+                    <h2>Historial</h2>
                     <div class="filters">
                         <div class="form-group">
-                            <label for="filtroFechaDesde">Desde:</label>
-                            <input type="date" id="filtroFechaDesde">
+                            <label for="historialFundo">Fundo:</label>
+                            <select id="historialFundo">
+                                <option value="todos">Todos los Fundos</option>
+                            </select>
                         </div>
-                        <div class="form-group">
-                            <label for="filtroFechaHasta">Hasta:</label>
-                            <input type="date" id="filtroFechaHasta">
-                        </div>
-                        <button class="btn btn-primary" onclick="plataforma.filtrarHistorial()">Filtrar</button>
-                        <button class="btn btn-secondary" onclick="plataforma.exportarDatos()">Exportar CSV</button>
                     </div>
-
-                    <div class="table-container">
-                        <table id="tablaHistorial" class="data-table">
+                    <div class="historial-content">
+                        <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Fundo</th>
                                     <th>Fecha</th>
-                                    <th>Día</th>
-                                    <th>Vacas Ordeña</th>
-                                    <th>Leche Total (L)</th>
-                                    <th>Promedio/Vaca (L)</th>
-                                    <th>Total Forrajes (kg)</th>
-                                    <th>Acciones</th>
+                                    <th>Fundo</th>
+                                    <th>Leche</th>
+                                    <th>Vacas</th>
+                                    <th>L/V/D</th>
                                 </tr>
                             </thead>
-                            <tbody id="tablaHistorialBody">
-                                <!-- Los datos se cargarán dinámicamente -->
+                            <tbody>
+                                <tr>
+                                    <td colspan="5">No hay datos disponibles</td>
+                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -893,6 +429,9 @@
     <script src="js/utils/storage.js"></script>
     <script src="js/utils/calculations.js"></script>
     <script src="js/utils/charts.js"></script>
+    <script src="js/utils/data-generator.js"></script>
+    <script src="js/utils/data-loader.js"></script>
+    <script src="js/utils/data-test.js"></script>
     <script src="js/modules/carga.js"></script>
     <script src="js/modules/dashboard.js"></script>
     <script src="js/modules/tabla.js"></script>

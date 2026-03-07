@@ -23,8 +23,10 @@
     --bg-card-hover: #252525; /* Gris medio oscuro */
     --bg-valor: #1f1f1f; /* 10% más claro que bg-dark */
     --bg-valor-hover: #2a2a2a; /* 15% más claro que bg-dark */
-    --bg-valor-positive: #1a2a1a; /* 10% más verde */
-    --bg-valor-negative: #2a1a1a; /* 10% más rojo */
+    --bg-valor-positive: #1e3a1e; /* Verde más visible */
+    --bg-valor-positive-hover: #2a4f2a; /* Verde más intenso en hover */
+    --bg-valor-negative: #3a1e1e; /* Rojo más visible */
+    --bg-valor-negative-hover: #4f2a2a; /* Rojo más intenso en hover */
     --bg-evolutivo: #151515; /* Gris oscuro específico para evolutivo */
     --bg-evolutivo-hover: #1f1f1f; /* Hover para evolutivo */
     --text-primary: #ffffff; /* Blanco puro para máximo contraste */

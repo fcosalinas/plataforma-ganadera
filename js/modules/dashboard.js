@@ -1,116 +1,163 @@
-// Dashboard Module - Visualización de KPIs y alertas
+/**
+ * Dashboard Module - Módulo principal del dashboard
+ * Maneja la visualización de KPIs, gráficos y métricas
+ */
+
+console.log('📊 Dashboard.js: Archivo cargado');
+
 class DashboardModule {
     constructor() {
-        this.charts = {};
+        console.log('📊 DashboardModule: Constructor llamado');
+        this.datos = [];
+        this.datosOriginales = []; // Guardar datos originales sin filtrar
+        this.fundoSeleccionado = 'todos';
+        this.fechaInicio = null;
+        this.fechaFin = null;
         this.alertas = [];
-        this.actualizacionIntervalo = null;
+        console.log('📊 DashboardModule: Constructor completado');
     }
 
-    async init() {
+    /**
+     * Inicializar módulo dashboard
+     */
+    init() {
+        console.log('📊 Dashboard Module init() llamado');
         try {
-            await this.cargarDatos();
-            this.setupAutoActualizacion();
-            
-            // Escuchar eventos de actualización de datos
-            window.addEventListener('datosActualizados', () => {
-                this.cargarDatos();
-            });
+            this.cargarDatos();
+            this.inicializarEventos();
+            console.log('📊 Dashboard Module inicializado completamente');
         } catch (error) {
-            console.error('❌ Error al inicializar módulo de dashboard:', error);
+            console.error('❌ Error en Dashboard Module init():', error);
         }
     }
 
-    waitForElement(selector) {
-        return new Promise((resolve) => {
-            const element = document.querySelector(selector);
-            if (element) {
-                resolve(element);
-                return;
-            }
-            
-            const observer = new MutationObserver(() => {
-                const element = document.querySelector(selector);
-                if (element) {
-                    observer.disconnect();
-                    resolve(element);
-                }
-            });
-            
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
-        });
-    }
-
-    async cargarDatos() {
+    /**
+     * Cargar datos desde localStorage
+     */
+    cargarDatos() {
         try {
-            const datos = StorageUtils.getDatos();
+            console.log('📊 Dashboard: Cargando datos desde localStorage...');
+            const datosGuardados = localStorage.getItem('plataformaGanaderaDatos');
+            console.log('📊 Dashboard: datosGuardados =', datosGuardados ? 'EXISTE' : 'NULL');
             
-            if (datos.length === 0) {
+            if (datosGuardados) {
+                this.datosOriginales = JSON.parse(datosGuardados);
+                this.datos = [...this.datosOriginales]; // Copia de los datos originales
+                console.log(`📊 Dashboard: Cargados ${this.datos.length} registros`);
+                console.log('📊 Dashboard: Primer registro:', this.datos[0]);
+                this.inicializarSelectorFechas();
+                this.actualizarDashboard();
+            } else {
+                console.log('📊 Dashboard: No hay datos guardados');
                 this.mostrarEstadoVacio();
-                return;
             }
-
-            // Actualizar selector de fundos
-            this.actualizarSelectorFundos(datos);
-            
-            // Filtrar datos según el fundo seleccionado
-            const datosFiltrados = this.filtrarDatosPorFundo(datos);
-            
-            // Actualizar KPIs
-            this.actualizarKPIs(datosFiltrados);
-            
-            // Crear gráficos
-            await this.crearGraficos(datosFiltrados);
-            
-            // Detectar y mostrar alertas
-            await this.detectarYMostrarAlertas(datosFiltrados);
-            
         } catch (error) {
-            console.error('❌ Error al cargar datos del dashboard:', error);
+            console.error('❌ Error al cargar datos en dashboard:', error);
+            this.mostrarError('Error al cargar los datos');
         }
     }
 
-    mostrarEstadoVacio() {
-        const kpis = document.querySelectorAll('.kpi-value');
-        kpis.forEach(kpi => {
-            kpi.textContent = '0';
-        });
-
-        const trends = document.querySelectorAll('.kpi-trend');
-        trends.forEach(trend => {
-            trend.textContent = '➡️ 0%';
-        });
-
-        // Mostrar mensaje en contenedor de alertas
-        const alertasContainer = document.getElementById('alertasContainer');
-        if (alertasContainer) {
-            alertasContainer.innerHTML = `
-                <div class="alert-item info">
-                    <div class="alert-icon">ℹ️</div>
-                    <div class="alert-content">
-                        <strong>No hay datos disponibles</strong>
-                        <p>Comienza cargando datos en la sección de Carga de Datos</p>
-                    </div>
-                </div>
-            `;
+    /**
+     * Inicializar eventos del dashboard
+     */
+    inicializarEventos() {
+        // Selector de fundos
+        const selector = document.getElementById('fundoDashboard');
+        if (selector) {
+            selector.addEventListener('change', (e) => {
+                this.filtrarPorFundo(e.target.value);
+            });
         }
     }
 
-    actualizarKPIs(datos) {
-        // Obtener el fundo seleccionado
-        const fundoSeleccionado = document.getElementById('fundoDashboard')?.value || 'todos';
+    /**
+     * Actualizar selector de fundos
+     */
+    actualizarSelectorFundos(datos) {
+        const selector = document.getElementById('fundoDashboard');
+        if (!selector) return;
+
+        // Obtener fundos únicos
+        const fundos = [...new Set(datos.map(d => d.fundo).filter(f => f))];
         
-        if (fundoSeleccionado === 'todos') {
-            // Para "todos los fundos", mostrar el promedio del día más reciente de cada fundo
+        // Guardar selección actual
+        const seleccionActual = selector.value;
+        
+        // Limpiar y actualizar opciones
+        selector.innerHTML = '<option value="todos">Todos los Fundos</option>';
+        fundos.forEach(fundo => {
+            const option = document.createElement('option');
+            option.value = fundo;
+            option.textContent = fundo;
+            selector.appendChild(option);
+        });
+        
+        // Restaurar selección
+        selector.value = seleccionActual;
+    }
+
+    /**
+     * Filtrar datos por fundo
+     */
+    filtrarPorFundo(fundo) {
+        this.fundoSeleccionado = fundo;
+        this.actualizarDashboard();
+    }
+
+    /**
+     * Filtrar datos según el fundo seleccionado
+     */
+    filtrarDatosPorFundo(datos) {
+        if (this.fundoSeleccionado === 'todos') {
+            return datos;
+        }
+        return datos.filter(d => d.fundo === this.fundoSeleccionado);
+    }
+
+    /**
+     * Actualizar dashboard completo
+     */
+    actualizarDashboard() {
+        if (!this.datosOriginales || this.datosOriginales.length === 0) {
+            this.mostrarEstadoVacio();
+            return;
+        }
+
+        // Aplicar filtros (fundo y fechas)
+        let datosFiltrados = this.aplicarFiltros(this.datosOriginales);
+        
+        // Actualizar selector de fundos
+        this.actualizarSelectorFundos(this.datosOriginales);
+        
+        // Generar alertas basadas en los datos filtrados
+        this.generarAlertas(datosFiltrados);
+        
+        // Actualizar KPIs
+        this.actualizarKPIs(datosFiltrados);
+        
+        // Actualizar gráficos
+        this.actualizarGraficos(datosFiltrados);
+        
+        // Mostrar alertas
+        this.mostrarAlertas();
+        
+        console.log(`📊 Dashboard actualizado con ${datosFiltrados.length} registros filtrados`);
+    }
+
+    /**
+     * Actualizar KPIs del dashboard
+     */
+    actualizarKPIs(datos) {
+        if (this.fundoSeleccionado === 'todos') {
             this.actualizarKPIsTodosFundos(datos);
         } else {
-            // Para un fundo específico, mostrar el dato más reciente de ese fundo
-            this.actualizarKPIsFundoEspecifico(datos, fundoSeleccionado);
+            this.actualizarKPIsFundoEspecifico(datos, this.fundoSeleccionado);
         }
     }
 
+    /**
+     * Actualizar KPIs para todos los fundos
+     */
     actualizarKPIsTodosFundos(datos) {
         // Agrupar datos por fundo y obtener el más reciente de cada uno
         const datosPorFundo = {};
@@ -128,235 +175,108 @@ class DashboardModule {
         }
 
         // A) Producción
-        const produccionTotal = datosRecientesPorFundo.reduce((sum, d) => sum + (d.lecheTotal || 0), 0);
-        const produccionPromedio = produccionTotal / datosRecientesPorFundo.length;
-        this.actualizarKPI('kpiProduccionDiaria', `${produccionPromedio.toFixed(1)} L`);
-
-        // Leche planta acumulado mensual (sumar todos los datos del mes más reciente con datos)
-        const mesActual = new Date().toISOString().substring(0, 7); // YYYY-MM
+        const lecheDiaria = datosRecientesPorFundo.reduce((sum, d) => sum + (d.lecheDiaria || 0), 0);
+        const litrosVacaDia = datosRecientesPorFundo.reduce((sum, d) => sum + (d.litrosVacaDia || 0), 0) / datosRecientesPorFundo.length;
+        const vacasOrdeña = datosRecientesPorFundo.reduce((sum, d) => sum + (d.vacasOrdeña || 0), 0);
         
-        // Buscar el mes más reciente con datos
-        const mesesConDatos = [...new Set(datos.map(d => d.fecha.substring(0, 7)))].sort().reverse();
-        const mesMasReciente = mesesConDatos[0] || mesActual;
-        
-        const datosMesActual = datos.filter(d => d.fecha.substring(0, 7) === mesMasReciente);
-        const lechePlantaAcumulado = datosMesActual.reduce((sum, d) => sum + (d.lechePlanta || 0), 0);
-        this.actualizarKPI('kpiLechePlanta', `${lechePlantaAcumulado.toFixed(0)} L`);
+        this.actualizarKPI('kpiLecheDiaria', `${lecheDiaria.toFixed(1)} L`);
+        this.actualizarKPI('kpiLitrosVacaDia', `${litrosVacaDia.toFixed(2)} L`);
+        this.actualizarKPI('kpiVacasOrdeña', vacasOrdeña.toString());
 
-        // B) Rebaño / Base productiva
-        const vacasTotal = datosRecientesPorFundo.reduce((sum, d) => sum + (d.totalOrdeña || d.vacasEstanque || 0), 0);
-        const vacasEntrantes = datosRecientesPorFundo.reduce((sum, d) => sum + (d.ingresoVacas || 0), 0);
-        const vacasSalientes = datosRecientesPorFundo.reduce((sum, d) => sum + (d.salidaVacas || 0), 0);
-        const vacasSecas = datosRecientesPorFundo.reduce((sum, d) => sum + (d.vacasSecas || 0), 0);
+        // B) Calidad
+        const proteina = datosRecientesPorFundo.reduce((sum, d) => sum + (d.proteina || 0), 0) / datosRecientesPorFundo.length;
+        const grasa = datosRecientesPorFundo.reduce((sum, d) => sum + (d.grasa || 0), 0) / datosRecientesPorFundo.length;
         
-        this.actualizarKPI('kpiTotalVacas', vacasTotal);
-        this.actualizarKPI('kpiVacasEntrantes', vacasEntrantes);
-        this.actualizarKPI('kpiVacasSalientes', vacasSalientes);
-        this.actualizarKPI('kpiVacasSecas', vacasSecas);
-
-        // C) Eficiencia productiva
-        const promedioGeneral = vacasTotal > 0 ? produccionTotal / vacasTotal : 0;
-        const lecheDiariaTotal = datosRecientesPorFundo.reduce((sum, d) => sum + (d.totalLecheDiaria || 0), 0);
-        const lecheDiariaPromedio = lecheDiariaTotal / datosRecientesPorFundo.length;
+        // C) Alimentación
+        const concentradoDiario = datosRecientesPorFundo.reduce((sum, d) => sum + (d.concentradoDiario || 0), 0);
         
-        this.actualizarKPI('kpiLitrosVacaDia', `${promedioGeneral.toFixed(1)} L`);
-        this.actualizarKPI('kpiLecheDiaria', `${lecheDiariaPromedio.toFixed(1)} L`);
-
-        // D) Calidad / Sólidos (valores simulados para ejemplo)
-        const proteinaPromedio = 3.2; // % típico
-        const grasaPromedio = 3.8; // % típico
+        // D) Economía
+        const costoDietaLitro = datosRecientesPorFundo.reduce((sum, d) => sum + (d.costoDietaLitro || 0), 0) / datosRecientesPorFundo.length;
+        const costoAlimentacion = datosRecientesPorFundo.reduce((sum, d) => sum + (d.costoAlimentacion || 0), 0);
+        const ingresoEstimado = datosRecientesPorFundo.reduce((sum, d) => sum + (d.ingresoEstimado || 0), 0);
+        const margenEstimado = datosRecientesPorFundo.reduce((sum, d) => sum + (d.margenEstimado || 0), 0);
+        const stockDiario = datosRecientesPorFundo.reduce((sum, d) => sum + (d.stockDiario || 0), 0);
         
-        this.actualizarKPI('kpiProteina', `${proteinaPromedio.toFixed(1)}%`);
-        this.actualizarKPI('kpiGrasa', `${grasaPromedio.toFixed(1)}%`);
+        this.actualizarKPI('kpiCostoDietaLitro', `$${costoDietaLitro.toFixed(3)}`);
+        this.actualizarKPI('kpiCostoAlimentacion', `$${costoAlimentacion.toFixed(0)}`);
+        this.actualizarKPI('kpiIngresoEstimado', `$${ingresoEstimado.toFixed(0)}`);
+        this.actualizarKPI('kpiMargenEstimado', `$${margenEstimado.toFixed(0)}`);
+        this.actualizarKPI('kpiStockDiario', `${stockDiario.toFixed(0)} kg`);
 
-        // E) Costos de alimentación
-        const costoTotalDiario = datosRecientesPorFundo.reduce((sum, d) => sum + (d.costoAlimentacion || 0), 0);
-        const costoDiariaLitro = produccionTotal > 0 ? costoTotalDiario / produccionTotal : 0;
-        const costoDiariaVaca = vacasTotal > 0 ? costoTotalDiario / vacasTotal : 0;
-        const costoTotalPromedio = costoTotalDiario / datosRecientesPorFundo.length;
+        // Calcular tendencias para todas las tarjetas de valor
+        this.calcularTendenciasValor(datosRecientesPorFundo);
         
-        this.actualizarKPI('kpiCostoDiariaLitro', `$${costoDiariaLitro.toFixed(2)}`);
-        this.actualizarKPI('kpiCostoDiariaVaca', `$${costoDiariaVaca.toFixed(2)}`);
-        this.actualizarKPI('kpiCostoTotalDiario', `$${costoTotalPromedio.toFixed(0)}`);
+        // Calcular tendencias para tarjetas de producción (vs promedio 7 días)
+        this.calcularTendenciasProduccion(datos);
 
-        // F) Consumos de dieta
-        const concentradoTotal = datosRecientesPorFundo.reduce((sum, d) => sum + (d.kilosEnergia || 0), 0);
-        const ensilajeTotal = datosRecientesPorFundo.reduce((sum, d) => sum + (d.kilosEnsilaje || 0), 0);
-        const otrosForrajesTotal = datosRecientesPorFundo.reduce((sum, d) => sum + (d.kilosOtrosForrajes || 0), 0);
-        const salesAditivosTotal = datosRecientesPorFundo.reduce((sum, d) => sum + (d.kilosSalesOtros || 0), 0);
-        const fibraTotal = datosRecientesPorFundo.reduce((sum, d) => sum + (d.kilosProteina || 0), 0);
-        const siloVaca = vacasTotal > 0 ? ensilajeTotal / vacasTotal : 0;
-        
-        this.actualizarKPI('kpiConcentrado', `${(concentradoTotal / datosRecientesPorFundo.length).toFixed(1)} kg`);
-        this.actualizarKPI('kpiEnsilaje', `${(ensilajeTotal / datosRecientesPorFundo.length).toFixed(1)} kg`);
-        this.actualizarKPI('kpiOtrosForrajes', `${(otrosForrajesTotal / datosRecientesPorFundo.length).toFixed(1)} kg`);
-        this.actualizarKPI('kpiSalesAditivos', `${(salesAditivosTotal / datosRecientesPorFundo.length).toFixed(1)} kg`);
-        this.actualizarKPI('kpiFibra', `${(fibraTotal / datosRecientesPorFundo.length).toFixed(1)} kg`);
-        this.actualizarKPI('kpiSiloVaca', `${siloVaca.toFixed(1)} kg`);
+        // Actualizar stock del último día
+        const registroMasReciente = this.obtenerRegistroMasReciente(datos);
+        if (registroMasReciente) {
+            this.actualizarKPI('kpiStockUltimoDia', `${(registroMasReciente.stockDiario || 0).toFixed(0)} kg`);
+            
+            // Calcular tendencia comparando con el día anterior
+            const stockActual = registroMasReciente.stockDiario || 0;
+            const stockAnterior = this.obtenerStockDiaAnterior(datos, registroMasReciente.fecha);
+            if (stockAnterior !== null) {
+                const tendencia = ((stockActual - stockAnterior) / stockAnterior * 100);
+                this.actualizarTendencia('trendStockUltimoDia', tendencia);
+            }
+        }
 
-        // Para "Todos los Fundos" no calcular tendencias (son datos agregados)
-        // Solo mostrar tendencia neutra para todos los KPIs
-        this.actualizarTendencia('trendProduccion', 0);
-        this.actualizarTendencia('trendLechePlanta', 0);
-        this.actualizarTendencia('trendTotalVacas', 0);
-        this.actualizarTendencia('trendVacasEntrantes', 0);
-        this.actualizarTendencia('trendVacasSalientes', 0);
-        this.actualizarTendencia('trendVacasSecas', 0);
-        this.actualizarTendencia('trendLitrosVacaDia', 0);
-        this.actualizarTendencia('trendLecheDiaria', 0);
-        this.actualizarTendencia('trendProteina', 0);
-        this.actualizarTendencia('trendGrasa', 0);
-        this.actualizarTendencia('trendCostoDiariaLitro', 0);
-        this.actualizarTendencia('trendCostoDiariaVaca', 0);
-        this.actualizarTendencia('trendCostoTotalDiario', 0);
-        this.actualizarTendencia('trendConcentrado', 0);
-        this.actualizarTendencia('trendEnsilaje', 0);
-        this.actualizarTendencia('trendOtrosForrajes', 0);
-        this.actualizarTendencia('trendSalesAditivos', 0);
-        this.actualizarTendencia('trendFibra', 0);
-        this.actualizarTendencia('trendSiloVaca', 0);
+        // Actualizar valores actuales para gráficos
+        this.actualizarKPI('kpiProduccionDiaria', `${lecheDiaria.toFixed(1)} L`);
+        this.actualizarKPI('kpiVacasOrdeñaEvol', vacasOrdeña.toString());
     }
 
-    actualizarKPIsFundoEspecifico(datos, fundoSeleccionado) {
-        // Filtrar datos del fundo específico
-        const datosFiltrados = datos.filter(d => d.fundo === fundoSeleccionado);
-        
-        if (datosFiltrados.length === 0) {
+    /**
+     * Actualizar KPIs para un fundo específico
+     */
+    actualizarKPIsFundoEspecifico(datos, fundo) {
+        // Obtener el dato más reciente del fundo
+        const datoFundo = datos
+            .filter(d => d.fundo === fundo)
+            .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))[0];
+
+        if (!datoFundo) {
             this.mostrarEstadoVacio();
             return;
         }
 
-        // Obtener el dato más reciente del fundo
-        const datosOrdenados = datosFiltrados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-        const datoDiario = datosOrdenados[0];
+        // Actualizar todos los KPIs con el dato más reciente
+        this.actualizarKPI('kpiLecheDiaria', `${(datoFundo.lecheDiaria || 0).toFixed(1)} L`);
+        this.actualizarKPI('kpiLitrosVacaDia', `${(datoFundo.litrosVacaDia || 0).toFixed(2)} L`);
+        this.actualizarKPI('kpiVacasOrdeña', (datoFundo.vacasOrdeña || 0).toString());
+        this.actualizarKPI('kpiCostoDietaLitro', `$${(datoFundo.costoDietaLitro || 0).toFixed(3)}`);
+        this.actualizarKPI('kpiCostoDieta', `$${(datoFundo.costoDieta || 0).toFixed(0)}`);
+        this.actualizarKPI('kpiCostoAlimentacion', `$${(datoFundo.costoAlimentacion || 0).toFixed(0)}`);
+        this.actualizarKPI('kpiIngresoEstimado', `$${(datoFundo.ingresoEstimado || 0).toFixed(0)}`);
+        this.actualizarKPI('kpiMargenEstimado', `$${(datoFundo.margenEstimado || 0).toFixed(0)}`);
+        this.actualizarKPI('kpiStockDiario', `${(datoFundo.stockDiario || 0).toFixed(0)} kg`);
+        this.actualizarKPI('kpiStockUltimoDia', `${(datoFundo.stockDiario || 0).toFixed(0)} kg`);
 
-        // Obtener promedio de los últimos 7 días (excluyendo el día actual)
-        const datosUltimos7Dias = datosOrdenados.slice(1, 8); // Saltar el primero (día actual)
-        
-        // Producción total diaria
-        const produccionDiaria = datoDiario.lecheTotal || 0;
-        this.actualizarKPI('kpiProduccionDiaria', `${produccionDiaria.toFixed(1)} L`);
-        
-        // Obtener datos REALES de los últimos 14 días para la tarjeta evolutiva de producción
-        const datosUltimos14Dias = datosOrdenados.slice(0, 14);
-        
-        // Actualizar tarjeta EVOLUTIVA de producción con datos REALES
-        this.actualizarKPIEvolutivo('kpiProduccionDiaria', datosUltimos14Dias);
-        
-        // Actualizar tarjeta EVOLUTIVA de concentrado con datos de ejemplo
-        const datosMuestraConcentrado = [];
-        for (let i = 0; i < 14; i++) {
-            datosMuestraConcentrado.push({
-                kilosConcentrado: 25 + Math.random() * 15, // Entre 25 y 40 kg
-                fecha: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-            });
+        // Calcular tendencia para fundo específico
+        this.calcularTendenciasValor([datoFundo]);
+        this.calcularTendenciasProduccion(datos);
+
+        // Calcular tendencia para fundo específico
+        const stockActual = datoFundo.stockDiario || 0;
+        const stockAnterior = this.obtenerStockDiaAnterior(datos, datoFundo.fecha);
+        if (stockAnterior !== null) {
+            const tendencia = ((stockActual - stockAnterior) / stockAnterior * 100);
+            this.actualizarTendencia('trendStockUltimoDia', tendencia);
         }
-        this.actualizarKPIEvolutivo('kpiConcentrado', datosMuestraConcentrado);
-        
-        // Actualizar tarjeta EVOLUTIVA de proteína con datos de ejemplo
-        const datosMuestraProteina = [];
-        for (let i = 0; i < 14; i++) {
-            datosMuestraProteina.push({
-                proteina: 3.2 + Math.random() * 0.4, // Entre 3.2 y 3.6%
-                fecha: new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-            });
-        }
-        this.actualizarKPIEvolutivo('kpiProteina', datosMuestraProteina);
 
-        // Leche planta acumulado mensual para este fundo (mes más reciente con datos)
-        const mesActual = new Date().toISOString().substring(0, 7); // YYYY-MM
-        
-        // Buscar el mes más reciente con datos para este fundo
-        const mesesConDatosFundo = [...new Set(datosFiltrados.map(d => d.fecha.substring(0, 7)))].sort().reverse();
-        const mesMasRecienteFundo = mesesConDatosFundo[0] || mesActual;
-        
-        const datosMesActualFundo = datosFiltrados.filter(d => d.fecha.substring(0, 7) === mesMasRecienteFundo);
-        const lechePlantaAcumuladoFundo = datosMesActualFundo.reduce((sum, d) => sum + (d.lechePlanta || 0), 0);
-        this.actualizarKPI('kpiLechePlanta', `${lechePlantaAcumuladoFundo.toFixed(0)} L`);
+        // Calcular tendencias para producción (vs promedio 7 días)
+        this.calcularTendenciasProduccion(datos);
 
-        // Vacas en ordeña (Total vacas)
-        const vacasDiario = datoDiario.totalOrdeña || datoDiario.vacasEstanque || 0;
-        this.actualizarKPI('kpiTotalVacas', vacasDiario);
-
-        // Otros KPIs del rebaño (último valor ingresado)
-        this.actualizarKPI('kpiVacasEntrantes', datoDiario.ingresoVacas || 0);
-        this.actualizarKPI('kpiVacasSalientes', datoDiario.salidaVacas || 0);
-        this.actualizarKPI('kpiVacasSecas', datoDiario.vacasSecas || 0);
-
-        // Promedio por vaca (Litros/vaca día)
-        const promedioPorVacaDiario = vacasDiario > 0 ? (produccionDiaria / vacasDiario).toFixed(1) : 0;
-        this.actualizarKPI('kpiLitrosVacaDia', `${promedioPorVacaDiario} L`);
-
-        // Total forrajes día
-        const forrajesDiario = datoDiario.totalDia || 
-            (datoDiario.kilosEnsilaje || 0) + (datoDiario.kilosHeno || 0) + 
-            (datoDiario.kilosOtrosForrajes || 0) + (datoDiario.kilosRacion || 0);
-        this.actualizarKPI('kpiCostoAnimal', `${forrajesDiario.toFixed(1)} kg`);
-
-        // Actualizar tendencias comparando con promedio de últimos 7 días
-        this.actualizarTendenciasDiarias(datoDiario, datosUltimos7Dias);
+        // Actualizar valores actuales para gráficos
+        this.actualizarKPI('kpiProduccionDiaria', `${(datoFundo.lecheDiaria || 0).toFixed(1)} L`);
+        this.actualizarKPI('kpiVacasOrdeñaEvol', (datoFundo.vacasOrdeña || 0).toString());
     }
 
-    actualizarSelectorFundos(datos) {
-        const selector = document.getElementById('fundoDashboard');
-        if (!selector) return;
-
-        // Obtener fundos únicos
-        const fundos = [...new Set(datos.map(d => d.fundo).filter(f => f))];
-        
-        // Guardar selección actual
-        const seleccionActual = selector.value;
-        
-        // Limpiar opciones (mantener "Todos los Fundos")
-        selector.innerHTML = '<option value="todos">Todos los Fundos</option>';
-        
-        // Agregar opciones de fundos
-        fundos.forEach(fundo => {
-            const option = document.createElement('option');
-            option.value = fundo;
-            option.textContent = fundo;
-            selector.appendChild(option);
-        });
-        
-        // Restaurar selección si existe
-        if (fundos.includes(seleccionActual)) {
-            selector.value = seleccionActual;
-        }
-    }
-
-    filtrarPorFundo(fundoSeleccionado) {
-        const datos = StorageUtils.getDatos();
-        
-        // Debug: Buscar datos específicos de Dollinco 28/3/26
-        const datosDollinco = datos.filter(d => d.fundo === 'Dollinco' && d.fecha === '2026-03-28');
-        
-        // Actualizar KPIs con el fundo seleccionado específicamente
-        if (fundoSeleccionado === 'todos') {
-            this.actualizarKPIsTodosFundos(datos);
-        } else {
-            this.actualizarKPIsFundoEspecifico(datos, fundoSeleccionado);
-        }
-        
-        // Actualizar gráficos con datos filtrados
-        const datosFiltrados = this.filtrarDatosPorFundo(datos, fundoSeleccionado);
-        this.crearGraficos(datosFiltrados);
-        
-        // Actualizar alertas
-        this.detectarYMostrarAlertas(datosFiltrados);
-    }
-
-    filtrarDatosPorFundo(datos, fundoSeleccionado = null) {
-        if (!fundoSeleccionado) {
-            fundoSeleccionado = document.getElementById('fundoDashboard')?.value || 'todos';
-        }
-        
-        if (fundoSeleccionado === 'todos') {
-            return datos;
-        }
-        
-        return datos.filter(d => d.fundo === fundoSeleccionado);
-    }
-
+    /**
+     * Actualizar un KPI específico
+     */
     actualizarKPI(id, valor) {
         const elemento = document.getElementById(id);
         if (elemento) {
@@ -364,387 +284,897 @@ class DashboardModule {
         }
     }
 
-    actualizarTendenciasDiarias(datoDiario, datosUltimos7Dias) {
-        // Si no hay suficientes datos históricos, mostrar tendencia neutra
-        if (datosUltimos7Dias.length === 0 || !datoDiario) {
-            this.actualizarTendencia('trendProduccion', 0);
-            this.actualizarTendencia('trendAnimales', 0);
-            this.actualizarTendencia('trendMortalidad', 0);
-            this.actualizarTendencia('trendCosto', 0);
-            return;
-        }
-
-        // Calcular promedios de los últimos 7 días
-        const promedioProduccion7Dias = datosUltimos7Dias.reduce((sum, d) => sum + (d.lecheTotal || 0), 0) / datosUltimos7Dias.length;
-        const promedioVacas7Dias = datosUltimos7Dias.reduce((sum, d) => sum + (d.totalOrdeña || d.vacasEstanque || 0), 0) / datosUltimos7Dias.length;
-        const promedioVacasEntrantes7Dias = datosUltimos7Dias.reduce((sum, d) => sum + (d.ingresoVacas || 0), 0) / datosUltimos7Dias.length;
-        const promedioVacasSalientes7Dias = datosUltimos7Dias.reduce((sum, d) => sum + (d.salidaVacas || 0), 0) / datosUltimos7Dias.length;
-        const promedioForrajes7Dias = datosUltimos7Dias.reduce((sum, d) => {
-            return sum + (d.totalDia || (d.kilosEnsilaje || 0) + (d.kilosHeno || 0) + (d.kilosOtrosForrajes || 0) + (d.kilosRacion || 0));
-        }, 0) / datosUltimos7Dias.length;
-
-        // Valores del día actual
-        const produccionDiaria = datoDiario.lecheTotal || 0;
-        const vacasDiario = datoDiario.totalOrdeña || datoDiario.vacasEstanque || 0;
-        const vacasEntrantesDiario = datoDiario.ingresoVacas || 0;
-        const vacasSalientesDiario = datoDiario.salidaVacas || 0;
-        const forrajesDiario = datoDiario.totalDia || 
-            (datoDiario.kilosEnsilaje || 0) + (datoDiario.kilosHeno || 0) + 
-            (datoDiario.kilosOtrosForrajes || 0) + (datoDiario.kilosRacion || 0);
-
-        // Validar que los valores sean números válidos
-        if (typeof produccionDiaria !== 'number' || typeof vacasDiario !== 'number') {
-            console.error('❌ Datos inválidos en actualizarTendenciasDiarias:', { produccionDiaria, vacasDiario });
-            // Mostrar tendencia neutra para todos los KPIs
-            this.actualizarTendencia('trendProduccion', 0);
-            this.actualizarTendencia('trendLechePlanta', 0);
-            this.actualizarTendencia('trendTotalVacas', 0);
-            this.actualizarTendencia('trendVacasEntrantes', 0);
-            this.actualizarTendencia('trendVacasSalientes', 0);
-            this.actualizarTendencia('trendVacasSecas', 0);
-            this.actualizarTendencia('trendLitrosVacaDia', 0);
+    /**
+     * Calcular tendencias para tarjetas de producción (vs promedio 7 días)
+     */
+    calcularTendenciasProduccion(datos) {
+        // Obtener promedio de los últimos 7 días (excluyendo el día actual)
+        const datosUltimos7Dias = this.obtenerUltimos7Dias(datos);
+        
+        if (!datosUltimos7Dias || datosUltimos7Dias.length < 2) {
+            // Si no hay suficientes datos, establecer tendencia neutra
             this.actualizarTendencia('trendLecheDiaria', 0);
-            this.actualizarTendencia('trendProteina', 0);
-            this.actualizarTendencia('trendGrasa', 0);
-            this.actualizarTendencia('trendCostoDiariaLitro', 0);
-            this.actualizarTendencia('trendCostoDiariaVaca', 0);
-            this.actualizarTendencia('trendCostoTotalDiario', 0);
-            this.actualizarTendencia('trendConcentrado', 0);
-            this.actualizarTendencia('trendEnsilaje', 0);
-            this.actualizarTendencia('trendOtrosForrajes', 0);
-            this.actualizarTendencia('trendSalesAditivos', 0);
-            this.actualizarTendencia('trendFibra', 0);
-            this.actualizarTendencia('trendSiloVaca', 0);
+            this.actualizarTendencia('trendLitrosVacaDia', 0);
+            this.actualizarTendencia('trendVacasOrdeña', 0);
+            this.actualizarTendencia('trendCostoDietaLitro', 0);
             return;
         }
-
-        // Calcular promedio por vaca
-        const promedioPorVacaDiario = vacasDiario > 0 ? produccionDiaria / vacasDiario : 0;
-        const promedioPorVaca7Dias = promedioVacas7Dias > 0 ? promedioProduccion7Dias / promedioVacas7Dias : 0;
-
-        // Calcular variaciones porcentuales
-        const variacionProduccion = promedioProduccion7Dias > 0 ? 
-            ((produccionDiaria - promedioProduccion7Dias) / promedioProduccion7Dias * 100) : 0;
-        const variacionVacas = promedioVacas7Dias > 0 ? 
-            ((vacasDiario - promedioVacas7Dias) / promedioVacas7Dias * 100) : 0;
-        const variacionVacasEntrantes = promedioVacasEntrantes7Dias > 0 ? 
-            ((vacasEntrantesDiario - promedioVacasEntrantes7Dias) / promedioVacasEntrantes7Dias * 100) : 0;
-        const variacionVacasSalientes = promedioVacasSalientes7Dias > 0 ? 
-            ((vacasSalientesDiario - promedioVacasSalientes7Dias) / promedioVacasSalientes7Dias * 100) : 0;
-        const variacionPromedio = promedioPorVaca7Dias > 0 ? 
-            ((promedioPorVacaDiario - promedioPorVaca7Dias) / promedioPorVaca7Dias * 100) : 0;
-        const variacionForrajes = promedioForrajes7Dias > 0 ? 
-            ((forrajesDiario - promedioForrajes7Dias) / promedioForrajes7Dias * 100) : 0;
-
-        // Actualizar tendencias para todos los KPIs
-        this.actualizarTendencia('trendProduccion', variacionProduccion);
-        this.actualizarTendencia('trendLechePlanta', variacionProduccion); // Misma tendencia que producción
         
-        // Tendencias de rebaño
-        this.actualizarTendencia('trendTotalVacas', variacionVacas);
-        this.actualizarTendencia('trendVacasEntrantes', variacionVacasEntrantes);
-        this.actualizarTendencia('trendVacasSalientes', variacionVacasSalientes);
-        this.actualizarTendencia('trendVacasSecas', 0); // No se calcula tendencia para secas
+        // Obtener el día más reciente
+        const datosFiltrados = this.filtrarDatosPorFundo(datos);
+        const registroMasReciente = this.obtenerRegistroMasReciente(datos);
         
-        // Tendencias de eficiencia
-        this.actualizarTendencia('trendLitrosVacaDia', variacionPromedio);
-        this.actualizarTendencia('trendLecheDiaria', variacionProduccion); // Misma tendencia que producción
+        if (!registroMasReciente) {
+            this.actualizarTendencia('trendLecheDiaria', 0);
+            this.actualizarTendencia('trendLitrosVacaDia', 0);
+            this.actualizarTendencia('trendVacasOrdeña', 0);
+            this.actualizarTendencia('trendCostoDietaLitro', 0);
+            return;
+        }
         
-        // Tendencias de calidad (valores simulados, sin tendencia real)
-        this.actualizarTendencia('trendProteina', 0);
-        this.actualizarTendencia('trendGrasa', 0);
+        // Calcular promedios de los últimos 7 días (excluyendo el día actual)
+        const ultimos7DiasSinHoy = datosUltimos7Dias.slice(0, -1); // Excluir el día actual
         
-        // Tendencias de costos (simuladas)
-        this.actualizarTendencia('trendCostoDiariaLitro', 0);
-        this.actualizarTendencia('trendCostoDiariaVaca', 0);
-        this.actualizarTendencia('trendCostoTotalDiario', 0);
+        if (ultimos7DiasSinHoy.length === 0) {
+            this.actualizarTendencia('trendLecheDiaria', 0);
+            this.actualizarTendencia('trendLitrosVacaDia', 0);
+            this.actualizarTendencia('trendVacasOrdeña', 0);
+            this.actualizarTendencia('trendCostoDietaLitro', 0);
+            return;
+        }
         
-        // Tendencias de consumos
-        this.actualizarTendencia('trendConcentrado', 0);
-        this.actualizarTendencia('trendEnsilaje', variacionForrajes);
-        this.actualizarTendencia('trendOtrosForrajes', 0);
-        this.actualizarTendencia('trendSalesAditivos', 0);
-        this.actualizarTendencia('trendFibra', 0);
-        this.actualizarTendencia('trendSiloVaca', variacionForrajes);
+        // Calcular promedios
+        const promedioLeche = ultimos7DiasSinHoy.reduce((sum, d) => sum + (d.lecheDiaria || 0), 0) / ultimos7DiasSinHoy.length;
+        const promedioLitrosVaca = ultimos7DiasSinHoy.reduce((sum, d) => sum + (d.litrosVacaDia || 0), 0) / ultimos7DiasSinHoy.length;
+        const promedioVacas = ultimos7DiasSinHoy.reduce((sum, d) => sum + (d.vacasOrdeña || 0), 0) / ultimos7DiasSinHoy.length;
+        const promedioCostoDietaLitro = ultimos7DiasSinHoy.reduce((sum, d) => sum + (d.costoDietaLitro || 0), 0) / ultimos7DiasSinHoy.length;
+        
+        // Obtener valores actuales (del día más reciente)
+        const actualLeche = registroMasReciente.lecheDiaria || 0;
+        const actualLitrosVaca = registroMasReciente.litrosVacaDia || 0;
+        const actualVacas = registroMasReciente.vacasOrdeña || 0;
+        const actualCostoDietaLitro = registroMasReciente.costoDietaLitro || 0;
+        
+        // Calcular tendencias
+        if (promedioLeche > 0) {
+            const tendenciaLeche = ((actualLeche - promedioLeche) / promedioLeche * 100);
+            this.actualizarTendencia('trendLecheDiaria', tendenciaLeche);
+        } else {
+            this.actualizarTendencia('trendLecheDiaria', 0);
+        }
+        
+        if (promedioLitrosVaca > 0) {
+            const tendenciaLitrosVaca = ((actualLitrosVaca - promedioLitrosVaca) / promedioLitrosVaca * 100);
+            this.actualizarTendencia('trendLitrosVacaDia', tendenciaLitrosVaca);
+        } else {
+            this.actualizarTendencia('trendLitrosVacaDia', 0);
+        }
+        
+        if (promedioVacas > 0) {
+            const tendenciaVacas = ((actualVacas - promedioVacas) / promedioVacas * 100);
+            this.actualizarTendencia('trendVacasOrdeña', tendenciaVacas);
+        } else {
+            this.actualizarTendencia('trendVacasOrdeña', 0);
+        }
+        
+        if (promedioCostoDietaLitro > 0) {
+            const tendenciaCostoDietaLitro = ((actualCostoDietaLitro - promedioCostoDietaLitro) / promedioCostoDietaLitro * 100);
+            this.actualizarTendencia('trendCostoDietaLitro', tendenciaCostoDietaLitro);
+        } else {
+            this.actualizarTendencia('trendCostoDietaLitro', 0);
+        }
     }
 
-    actualizarTendencias(datosActuales, datosAnteriores) {
-        // Tendencia producción
-        const tendenciaProduccion = CalculationUtils.calcularTendencia(datosActuales, datosAnteriores);
-        this.actualizarTendencia('trendProduccion', tendenciaProduccion);
-
-        // Tendencia vacas
-        const totalVacasActuales = datosActuales.reduce((total, d) => total + (d.vacas?.totalOrdeña || 0), 0);
-        const totalVacasAnteriores = datosAnteriores.reduce((total, d) => total + (d.vacas?.totalOrdeña || 0), 0);
-        const promedioVacasActuales = datosActuales.length > 0 ? totalVacasActuales / datosActuales.length : 0;
-        const promedioVacasAnteriores = datosAnteriores.length > 0 ? totalVacasAnteriores / datosAnteriores.length : 0;
-        const tendenciaVacas = promedioVacasAnteriores > 0 ? 
-            ((promedioVacasActuales - promedioVacasAnteriores) / promedioVacasAnteriores * 100).toFixed(1) : 0;
-        this.actualizarTendencia('trendAnimales', tendenciaVacas);
-
-        // Tendencia promedio por vaca
-        const promedioActual = CalculationUtils.calcularPromedioPorVaca(datosActuales);
-        const promedioAnterior = CalculationUtils.calcularPromedioPorVaca(datosAnteriores);
-        const tendenciaPromedio = promedioAnterior > 0 ? 
-            ((promedioActual - promedioAnterior) / promedioAnterior * 100).toFixed(1) : 0;
-        this.actualizarTendencia('trendMortalidad', tendenciaPromedio);
-
-        // Tendencia forrajes
-        const totalForrajesActuales = datosActuales.reduce((total, d) => total + (d.forrajes?.totalDia || 0), 0);
-        const totalForrajesAnteriores = datosAnteriores.reduce((total, d) => total + (d.forrajes?.totalDia || 0), 0);
-        const promedioForrajesActuales = datosActuales.length > 0 ? totalForrajesActuales / datosActuales.length : 0;
-        const promedioForrajesAnteriores = datosAnteriores.length > 0 ? totalForrajesAnteriores / datosAnteriores.length : 0;
-        const tendenciaForrajes = promedioForrajesAnteriores > 0 ? 
-            ((promedioForrajesActuales - promedioForrajesAnteriores) / promedioForrajesAnteriores * 100).toFixed(1) : 0;
-        this.actualizarTendencia('trendCosto', tendenciaForrajes);
+    /**
+     * Obtener últimos 7 días de datos
+     */
+    obtenerUltimos7Dias(datos) {
+        if (!datos || datos.length === 0) return [];
+        
+        // Filtrar datos según el fundo seleccionado
+        const datosFiltrados = this.filtrarDatosPorFundo(datos);
+        
+        // Ordenar por fecha
+        const datosOrdenados = datosFiltrados.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+        
+        // Obtener últimos 7 días
+        return datosOrdenados.slice(-7);
     }
 
+    /**
+     * Calcular tendencias para tarjetas de valor
+     */
+    calcularTendenciasValor(datosActuales) {
+        // Obtener datos del día anterior para comparar
+        const datosAnteriores = this.obtenerDatosDiaAnterior(datosActuales);
+        
+        if (!datosAnteriores || datosAnteriores.length === 0) {
+            // Si no hay datos anteriores, establecer tendencia neutra
+            this.actualizarTendencia('trendIngresoEstimado', 0);
+            this.actualizarTendencia('trendCostoAlimentacion', 0);
+            this.actualizarTendencia('trendMargenEstimado', 0);
+            return;
+        }
+        
+        // Calcular valores actuales y anteriores
+        const actualIngreso = datosActuales.reduce((sum, d) => sum + (d.ingresoEstimado || 0), 0);
+        const actualCosto = datosActuales.reduce((sum, d) => sum + (d.costoAlimentacion || 0), 0);
+        const actualMargen = datosActuales.reduce((sum, d) => sum + (d.margenEstimado || 0), 0);
+        
+        const anteriorIngreso = datosAnteriores.reduce((sum, d) => sum + (d.ingresoEstimado || 0), 0);
+        const anteriorCosto = datosAnteriores.reduce((sum, d) => sum + (d.costoAlimentacion || 0), 0);
+        const anteriorMargen = datosAnteriores.reduce((sum, d) => sum + (d.margenEstimado || 0), 0);
+        
+        // Calcular y actualizar tendencias
+        if (anteriorIngreso > 0) {
+            const tendenciaIngreso = ((actualIngreso - anteriorIngreso) / anteriorIngreso * 100);
+            this.actualizarTendencia('trendIngresoEstimado', tendenciaIngreso);
+        } else {
+            this.actualizarTendencia('trendIngresoEstimado', 0);
+        }
+        
+        if (anteriorCosto > 0) {
+            const tendenciaCosto = ((actualCosto - anteriorCosto) / anteriorCosto * 100);
+            this.actualizarTendencia('trendCostoAlimentacion', tendenciaCosto);
+        } else {
+            this.actualizarTendencia('trendCostoAlimentacion', 0);
+        }
+        
+        if (anteriorMargen > 0) {
+            const tendenciaMargen = ((actualMargen - anteriorMargen) / anteriorMargen * 100);
+            this.actualizarTendencia('trendMargenEstimado', tendenciaMargen);
+        } else {
+            this.actualizarTendencia('trendMargenEstimado', 0);
+        }
+    }
+
+    /**
+     * Obtener datos del día anterior
+     */
+    obtenerDatosDiaAnterior(datosActuales) {
+        if (!datosActuales || datosActuales.length === 0) return [];
+        
+        // Obtener la fecha más reciente
+        const fechaMasReciente = new Date(Math.max(...datosActuales.map(d => new Date(d.fecha))));
+        const fechaAnterior = new Date(fechaMasReciente);
+        fechaAnterior.setDate(fechaAnterior.getDate() - 1);
+        
+        const fechaAnteriorStr = fechaAnterior.toISOString().split('T')[0];
+        
+        // Obtener todos los datos y filtrar por fecha y fundo
+        const todosDatos = this.datos || [];
+        const datosFiltrados = this.filtrarDatosPorFundo(todosDatos);
+        
+        // Si estamos en "todos", devolver todos los del día anterior
+        if (this.fundoSeleccionado === 'todos') {
+            return datosFiltrados.filter(d => d.fecha === fechaAnteriorStr);
+        } else {
+            // Si estamos en un fundo específico, devolver solo ese fundo
+            return datosFiltrados.filter(d => d.fecha === fechaAnteriorStr && d.fundo === this.fundoSeleccionado);
+        }
+    }
+
+    /**
+     * Actualizar tendencia
+     */
     actualizarTendencia(id, tendencia) {
         const elemento = document.getElementById(id);
-        if (!elemento) return;
+        if (elemento) {
+            const simbolo = tendencia > 0 ? '⬆️' : tendencia < 0 ? '⬇️' : '➡️';
+            elemento.textContent = `${simbolo} ${Math.abs(tendencia).toFixed(1)}%`;
+            
+            // Agregar clases de tendencia a la tarjeta KPI correspondiente
+            this.actualizarClasesTendenciaTarjeta(id, tendencia);
+        }
+    }
+
+    /**
+     * Actualizar clases de tendencia en la tarjeta KPI
+     */
+    actualizarClasesTendenciaTarjeta(trendElementId, tendencia) {
+        // Mapear ID del elemento de tendencia al ID de la tarjeta KPI
+        const tarjetaKpiId = this.obtenerTarjetaKpiIdDesdeTrend(trendElementId);
         
-        // Determinar la clase CSS según el valor
-        let claseCSS = 'neutral';
-        let icono = '➡️';
-        let valorFormateado = Math.abs(tendencia).toFixed(1);
+        if (!tarjetaKpiId) return;
         
+        const tarjetaElement = document.querySelector(`[data-kpi="${tarjetaKpiId}"]`);
+        if (!tarjetaElement) return;
+        
+        // Remover todas las clases de tendencia
+        tarjetaElement.classList.remove('trend-positive', 'trend-negative', 'trend-neutral');
+        
+        // Agregar la clase correspondiente según la tendencia
         if (tendencia > 0) {
-            claseCSS = 'positive';
-            icono = '📈';
+            tarjetaElement.classList.add('trend-positive');
         } else if (tendencia < 0) {
-            claseCSS = 'negative';
-            icono = '📉';
-        }
-        
-        // Actualizar el contenido y las clases del trend
-        elemento.textContent = `${icono} ${valorFormateado}%`;
-        elemento.className = `kpi-trend ${claseCSS}`;
-        
-        // Actualizar el color de fondo de la tarjeta VALOR según el trend
-        const tarjeta = elemento.closest('.kpi-card.valor');
-        if (tarjeta) {
-            // Remover todas las clases de trend
-            tarjeta.classList.remove('trend-positive', 'trend-negative', 'trend-neutral');
-            
-            // Agregar la clase correspondiente
-            if (tendencia > 0) {
-                tarjeta.classList.add('trend-positive');
-            } else if (tendencia < 0) {
-                tarjeta.classList.add('trend-negative');
-            } else {
-                tarjeta.classList.add('trend-neutral');
-            }
-        }
-    }
-
-    // Funciones para diferentes tipos de tarjetas KPI
-    actualizarKPIValor(kpiId, valor, tendencia = 0) {
-        const valorElement = document.getElementById(kpiId);
-        const trendElement = document.getElementById(`trend${kpiId.replace('kpi', '')}`);
-        
-        if (valorElement) {
-            valorElement.textContent = valor;
-        }
-        
-        if (trendElement) {
-            this.actualizarTendencia(trendElement.id, tendencia);
-        }
-    }
-
-    actualizarKPIEvolutivo(kpiId, datosUltimos14Dias) {
-        // Corregir: usar el data-kpi del HTML como base
-        let baseId;
-        if (kpiId === 'kpiProduccionDiaria') {
-            baseId = 'produccionDiaria';
-        } else if (kpiId === 'kpiConcentrado') {
-            baseId = 'concentrado';
-        } else if (kpiId === 'kpiProteina') {
-            baseId = 'proteina';
+            tarjetaElement.classList.add('trend-negative');
         } else {
-            baseId = kpiId.replace('kpi', '');
-        }
-        
-        const valorElement = document.getElementById(`kpi${baseId.charAt(0).toUpperCase() + baseId.slice(1)}`); // kpiProduccionDiaria o kpiConcentrado
-        const canvasElement = document.getElementById(`chart-kpi-${baseId}`); // chart-kpi-produccionDiaria o chart-kpi-concentrado
-        const labelElement = document.getElementById(`chart-label-${baseId}`); // chart-label-produccionDiaria o chart-label-concentrado
-        
-        if (!datosUltimos14Dias || datosUltimos14Dias.length === 0) {
-            return;
-        }
-        
-        // Obtener valor actual
-        const valorActual = datosUltimos14Dias[datosUltimos14Dias.length - 1];
-        const valorFormateado = this.formatearValorKPI(kpiId, this.extraerValorKPI(kpiId, valorActual));
-        
-        if (valorElement) {
-            valorElement.textContent = valorFormateado;
-        }
-        
-        // Actualizar etiqueta del gráfico
-        if (labelElement) {
-            labelElement.textContent = valorFormateado;
-        }
-        
-        // Dibujar gráfico de línea
-        if (canvasElement) {
-            this.dibujarGraficoLineaKPI(canvasElement, datosUltimos14Dias, kpiId);
+            tarjetaElement.classList.add('trend-neutral');
         }
     }
 
-    actualizarKPITabla(kpiId, datosAgrupados) {
-        const tablaElement = document.querySelector(`[data-kpi="${kpiId}"] .kpi-table`);
-        if (!tablaElement || !datosAgrupados) return;
+    /**
+     * Obtener ID de tarjeta KPI desde ID de elemento de tendencia
+     */
+    obtenerTarjetaKpiIdDesdeTrend(trendElementId) {
+        const mapeo = {
+            'trendLecheDiaria': 'lecheDiaria',
+            'trendLitrosVacaDia': 'litrosVacaDia',
+            'trendVacasOrdeña': 'vacasOrdeña', // Corregido: era vacasOrdeñaEvol
+            'trendCostoDietaLitro': 'costoDietaLitro', // Corregido: era costoDieta
+            'trendIngresoEstimado': 'ingresoEstimado',
+            'trendCostoAlimentacion': 'costoAlimentacion',
+            'trendMargenEstimado': 'margenEstimado',
+            'trendStockUltimoDia': 'stockUltimoDia'
+        };
         
-        // Limpiar tabla existente
-        tablaElement.innerHTML = '';
-        
-        // Crear encabezado
-        const thead = document.createElement('thead');
-        const headerRow = document.createElement('tr');
-        
-        const thTipo = document.createElement('th');
-        thTipo.textContent = 'Tipo';
-        headerRow.appendChild(thTipo);
-        
-        const thValor = document.createElement('th');
-        thValor.textContent = 'Valor';
-        thValor.style.textAlign = 'right';
-        headerRow.appendChild(thValor);
-        
-        thead.appendChild(headerRow);
-        tablaElement.appendChild(thead);
-        
-        // Crear cuerpo
-        const tbody = document.createElement('tbody');
-        
-        Object.entries(datosAgrupados).forEach(([tipo, valor]) => {
-            const row = document.createElement('tr');
-            
-            const tdTipo = document.createElement('td');
-            tdTipo.textContent = tipo;
-            row.appendChild(tdTipo);
-            
-            const tdValor = document.createElement('td');
-            tdValor.textContent = this.formatearValorKPI(kpiId, valor);
-            tdValor.style.textAlign = 'right';
-            
-            // Resaltar valor más alto
-            if (valor === Math.max(...Object.values(datosAgrupados))) {
-                tdValor.className = 'highlight';
-            }
-            
-            row.appendChild(tdValor);
-            tbody.appendChild(row);
-        });
-        
-        tablaElement.appendChild(tbody);
+        return mapeo[trendElementId] || null;
     }
 
+    /**
+     * Actualizar gráficos del dashboard
+     */
+    actualizarGraficos(datos) {
+        // Usar todos los datos del rango de fechas seleccionado (ya filtrados)
+        // En lugar de limitar a últimos 14 días
+        
+        // Actualizar cada gráfico evolutivo con todos los datos disponibles
+        this.actualizarGraficoKPI('produccionDiaria', datos);
+        this.actualizarGraficoKPI('concentradoDiario', datos);
+        this.actualizarGraficoKPI('calidadLeche', datos);
+        this.actualizarGraficoKPI('vacasOrdeñaEvol', datos);
+        this.actualizarGraficoKPI('costoDieta', datos);
+        this.actualizarGraficoKPI('stockDiario', datos);
+        
+        console.log(`📈 Gráficos actualizados con ${datos.length} puntos de datos`);
+    }
+
+    /**
+     * Obtener datos de los últimos 14 días
+     */
+    obtenerUltimos14Dias(datos) {
+        if (!datos || datos.length === 0) return [];
+        
+        // Ordenar por fecha
+        const datosOrdenados = datos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+        
+        // Obtener últimos 14 días
+        return datosOrdenados.slice(-14);
+    }
+
+    /**
+     * Actualizar gráfico KPI específico
+     */
+    actualizarGraficoKPI(kpiId, datos) {
+        const canvasElement = document.getElementById(`chart-kpi-${kpiId}`);
+        if (!canvasElement) return;
+
+        // Dibujar gráfico
+        this.dibujarGraficoLineaKPI(canvasElement, datos, kpiId);
+    }
+
+    /**
+     * Dibujar gráfico de línea para KPI
+     */
     dibujarGraficoLineaKPI(canvas, datos, kpiId) {
         const ctx = canvas.getContext('2d');
         const rect = canvas.getBoundingClientRect();
         
-        // Configurar dimensiones del canvas
-        const width = canvas.width = rect.width * 2;
-        const height = canvas.height = rect.height * 2;
-        const scale = 2;
-        
-        ctx.scale(scale, scale);
-        
         // Limpiar canvas
-        ctx.clearRect(0, 0, width, height);
+        ctx.clearRect(0, 0, rect.width, rect.height);
         
+        if (!datos || datos.length === 0) return;
+
         // Configuración del gráfico
-        const padding = { top: 15, right: 15, bottom: 25, left: 35 };
-        const graphWidth = (rect.width - padding.left - padding.right);
-        const graphHeight = (rect.height - padding.top - padding.bottom);
+        const padding = { top: 20, right: 80, bottom: 50, left: 50 }; // Aumentado bottom de 30 a 50
+        const graphWidth = rect.width - padding.left - padding.right;
+        const graphHeight = rect.height - padding.top - padding.bottom;
+
+        // Obtener valores según el KPI
+        const valores = datos.map(d => this.extraerValorKPI(kpiId, d));
+        const maxValue = Math.max(...valores) * 1.1;
+        const minValue = 0;
+
+        // Función para dibujar línea suave
+        const drawSmoothLine = (valores, color) => {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            // Función auxiliar para interpolar Catmull-Rom
+            const catmullRomInterpolate = (p0, p1, p2, p3, t) => {
+                const t2 = t * t;
+                const t3 = t2 * t;
+                
+                return {
+                    x: 0.5 * (
+                        2 * p1.x +
+                        (-p0.x + p2.x) * t +
+                        (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
+                        (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3
+                    ),
+                    y: 0.5 * (
+                        2 * p1.y +
+                        (-p0.y + p2.y) * t +
+                        (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 +
+                        (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3
+                    )
+                };
+            };
+
+            // Convertir valores a puntos
+            const points = valores.map((valor, i) => ({
+                x: padding.left + (i / (valores.length - 1)) * graphWidth,
+                y: padding.top + graphHeight - ((valor - minValue) / (maxValue - minValue)) * graphHeight
+            }));
+
+            // Dibujar curvas Catmull-Rom
+            for (let i = 0; i < points.length - 1; i++) {
+                const p0 = points[Math.max(0, i - 1)];
+                const p1 = points[i];
+                const p2 = points[i + 1];
+                const p3 = points[Math.min(points.length - 1, i + 2)];
+
+                if (i === 0) {
+                    ctx.moveTo(p1.x, p1.y);
+                }
+
+                // Dibujar segmento con múltiples puntos para suavidad
+                const segments = 10; // Más segmentos = más suave
+                for (let j = 0; j <= segments; j++) {
+                    const t = j / segments;
+                    const point = catmullRomInterpolate(p0, p1, p2, p3, t);
+                    
+                    if (i === 0 && j === 0) {
+                        ctx.moveTo(point.x, point.y);
+                    } else {
+                        ctx.lineTo(point.x, point.y);
+                    }
+                }
+            }
+
+            ctx.stroke();
+        };
+
+        // Dibujar área bajo la línea
+        const drawArea = (valores, color, alpha = 0.3) => {
+            ctx.fillStyle = color.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
+            ctx.beginPath();
+
+            valores.forEach((valor, i) => {
+                const x = padding.left + (i / (valores.length - 1)) * graphWidth;
+                const y = padding.top + graphHeight - ((valor - minValue) / (maxValue - minValue)) * graphHeight;
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    const prevX = padding.left + ((i - 1) / (valores.length - 1)) * graphWidth;
+                    const prevY = padding.top + graphHeight - ((valores[i - 1] - minValue) / (maxValue - minValue)) * graphHeight;
+                    const cpX = (prevX + x) / 2;
+                    ctx.quadraticCurveTo(prevX, prevY, cpX, (prevY + y) / 2);
+                    ctx.quadraticCurveTo(x, y, x, y);
+                }
+            });
+
+            // Cerrar el área
+            ctx.lineTo(padding.left + graphWidth, padding.top + graphHeight);
+            ctx.lineTo(padding.left, padding.top + graphHeight);
+            ctx.closePath();
+            ctx.fill();
+        };
+
+        // Dibujar gráfico según el tipo de KPI
+        if (kpiId === 'calidadLeche') {
+            // Gráfico de área apilada para calidad
+            this.dibujarGraficoAreaApilada(ctx, datos, rect, padding, graphWidth, graphHeight);
+        } else if (kpiId === 'concentradoDiario') {
+            // Gráfico de barras para concentrado
+            this.dibujarGraficoBarras(ctx, valores, rect, padding, graphWidth, graphHeight, maxValue, datos);
+        } else {
+            // Gráfico de línea con área para otros KPIs
+            const color = this.getColorKPI(kpiId);
+            drawArea(valores, color);
+            drawSmoothLine(valores, color);
+
+            // Dibujar puntos con tamaño dinámico
+            const puntoSize = valores.length > 100 ? 2 : valores.length > 50 ? 2.5 : 3;
+            valores.forEach((valor, i) => {
+                const x = padding.left + (i / (valores.length - 1)) * graphWidth;
+                const y = padding.top + graphHeight - ((valor - minValue) / (maxValue - minValue)) * graphHeight;
+
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x, y, puntoSize, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        }
+
+        // Dibujar ejes con valores y unidades
+        this.dibujarEjes(ctx, padding, graphWidth, graphHeight, maxValue, kpiId, null, null, datos);
+
+        // Dibujar etiqueta del último valor (solo para KPIs que no son calidadLeche)
+        if (kpiId !== 'calidadLeche') {
+            this.dibujarEtiquetaUltimoValor(ctx, valores, rect, padding, graphWidth, graphHeight, maxValue, kpiId);
+        }
+
+        // Dibujar leyenda abajo del gráfico
+        try {
+            this.dibujarLeyendaGrafico(ctx, rect, kpiId);
+        } catch (error) {
+            console.error('Error al dibujar leyenda:', error);
+        }
+    }
+
+    /**
+     * Dibujar etiqueta con el valor del último punto
+     */
+    dibujarEtiquetaUltimoValor(ctx, valores, rect, padding, graphWidth, graphHeight, maxValue, kpiId) {
+        if (valores.length === 0) return;
         
-        // Obtener valores
+        const ultimoValor = valores[valores.length - 1];
+        const ultimoX = padding.left + graphWidth;
+        const ultimoY = padding.top + graphHeight - ((ultimoValor - 0) / (maxValue - 0)) * graphHeight;
+        
+        // Formatear el valor según el KPI
+        const valorFormateado = this.formatearValorEtiqueta(ultimoValor, kpiId);
+        
+        // Configurar estilo de la etiqueta
+        ctx.font = 'bold 11px sans-serif';
+        
+        // Medir el texto para calcular el tamaño
+        const texto = valorFormateado;
+        const metrics = ctx.measureText(texto);
+        const paddingEtiqueta = 4;
+        const etiquetaWidth = metrics.width + paddingEtiqueta * 2;
+        const etiquetaHeight = 16;
+        
+        // Posicionar siempre a la izquierda del punto
+        const etiquetaX = ultimoX - etiquetaWidth - 8;
+        const etiquetaY = ultimoY - etiquetaHeight / 2;
+        
+        // Fondo semi-transparente
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(etiquetaX, etiquetaY, etiquetaWidth, etiquetaHeight);
+        
+        // Borde sutil
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(etiquetaX, etiquetaY, etiquetaWidth, etiquetaHeight);
+        
+        // Texto del valor
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.textAlign = 'left';
+        ctx.fillText(texto, etiquetaX + paddingEtiqueta, etiquetaY + 11);
+        
+        // Restaurar alineación
+        ctx.textAlign = 'left';
+    }
+
+    /**
+     * Formatear valor para etiqueta
+     */
+    formatearValorEtiqueta(valor, kpiId) {
+        if (kpiId === 'calidadLeche' || kpiId === 'proteina' || kpiId === 'grasa') {
+            return `${valor.toFixed(1)}%`;
+        } else if (kpiId === 'vacasOrdeñaEvol') {
+            return Math.round(valor).toString();
+        } else if (kpiId === 'costoDieta') {
+            return `$${Math.round(valor)}`;
+        } else if (kpiId === 'stockDiario') {
+            return `${Math.round(valor)}kg`;
+        } else if (kpiId === 'produccionDiaria') {
+            return `${Math.round(valor)}L`;
+        } else if (kpiId === 'concentradoDiario') {
+            return `${Math.round(valor)}kg`;
+        } else {
+            return Math.round(valor).toString();
+        }
+    }
+
+    /**
+     * Dibujar gráfico de área apilada (para calidad de leche)
+     */
+    dibujarGraficoAreaApilada(ctx, datos, rect, padding, graphWidth, graphHeight) {
+        // Obtener valores de proteína y grasa
+        const valoresProteina = datos.map(d => this.extraerValorKPI('proteina', d));
+        const valoresGrasa = datos.map(d => this.extraerValorKPI('grasa', d));
+        
+        if (valoresProteina.length === 0 || valoresGrasa.length === 0) return;
+        
+        // Para el dibujado: usar la suma (para apilamiento)
+        const maxValueDibujo = Math.max(...valoresProteina.map((p, i) => p + valoresGrasa[i])) * 1.1;
+        
+        // Para la escala: usar el máximo individual (para valores correctos en eje Y)
+        const maxValueEscala = Math.max(...valoresProteina, ...valoresGrasa) * 1.1;
+        
+        const minValue = 0;
+
+        // Función para dibujar área apilada suave
+        const drawSmoothStackedArea = (valoresBase, valoresTop, colorBase, colorTop, alphaBase, alphaTop) => {
+            // Dibujar área base (grasa)
+            ctx.fillStyle = colorBase.replace('rgb', 'rgba').replace(')', `, ${alphaBase})`);
+            ctx.beginPath();
+
+            valoresBase.forEach((valor, i) => {
+                const x = padding.left + (i / (valoresBase.length - 1)) * graphWidth;
+                const y = padding.top + graphHeight - ((valor - minValue) / (maxValueDibujo - minValue)) * graphHeight;
+
+                if (i === 0) {
+                    ctx.moveTo(x, padding.top + graphHeight);
+                    ctx.lineTo(x, y);
+                } else {
+                    const prevX = padding.left + ((i - 1) / (valoresBase.length - 1)) * graphWidth;
+                    const prevY = padding.top + graphHeight - ((valoresBase[i - 1] - minValue) / (maxValueDibujo - minValue)) * graphHeight;
+                    const cpX = (prevX + x) / 2;
+                    ctx.quadraticCurveTo(prevX, prevY, cpX, (prevY + y) / 2);
+                    ctx.quadraticCurveTo(x, y, x, y);
+                }
+            });
+
+            ctx.lineTo(padding.left + graphWidth, padding.top + graphHeight);
+            ctx.lineTo(padding.left, padding.top + graphHeight);
+            ctx.closePath();
+            ctx.fill();
+
+            // Dibujar área superior (proteína) apilada sobre la base
+            ctx.fillStyle = colorTop.replace('rgb', 'rgba').replace(')', `, ${alphaTop})`);
+            ctx.beginPath();
+
+            // Primero dibujar la línea superior del área apilada
+            valoresTop.forEach((valor, i) => {
+                const x = padding.left + (i / (valoresTop.length - 1)) * graphWidth;
+                const valorBase = valoresBase[i] || 0;
+                const valorTotal = valor + valorBase;
+                const y = padding.top + graphHeight - ((valorTotal - minValue) / (maxValueDibujo - minValue)) * graphHeight;
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    const prevX = padding.left + ((i - 1) / (valoresTop.length - 1)) * graphWidth;
+                    const prevValorBase = valoresBase[i - 1] || 0;
+                    const prevValorTotal = valoresTop[i - 1] + prevValorBase;
+                    const prevY = padding.top + graphHeight - ((prevValorTotal - minValue) / (maxValueDibujo - minValue)) * graphHeight;
+                    const cpX = (prevX + x) / 2;
+                    ctx.quadraticCurveTo(prevX, prevY, cpX, (prevY + y) / 2);
+                    ctx.quadraticCurveTo(x, y, x, y);
+                }
+            });
+
+            // Cerrar el área superior: ir hasta el borde inferior derecho, luego borde inferior izquierdo, y cerrar
+            const lastX = padding.left + graphWidth;
+            const lastValorBase = valoresBase[valoresBase.length - 1] || 0;
+            const lastY = padding.top + graphHeight - ((lastValorBase - minValue) / (maxValueDibujo - minValue)) * graphHeight;
+            
+            // Línea desde el último punto superior hasta la base en el borde derecho
+            ctx.lineTo(lastX, lastY);
+            
+            // Línea a lo largo de la base hasta el borde izquierdo
+            const firstBaseY = padding.top + graphHeight - (((valoresBase[0] || 0) - minValue) / (maxValueDibujo - minValue)) * graphHeight;
+            ctx.lineTo(padding.left, firstBaseY);
+            
+            ctx.closePath();
+            ctx.fill();
+        };
+
+        // Dibujar áreas apiladas
+        drawSmoothStackedArea(valoresGrasa, valoresProteina, 'rgb(251, 146, 60)', 'rgb(99, 102, 241)', 0.6, 0.8);
+
+        // Dibujar líneas superiores
+        this.dibujarLineaSuperiorApilada(ctx, valoresProteina, 'rgb(99, 102, 241)', padding, graphWidth, graphHeight, maxValueDibujo, valoresGrasa);
+        this.dibujarLineaSuperiorApilada(ctx, valoresGrasa, 'rgb(251, 146, 60)', padding, graphWidth, graphHeight, maxValueDibujo);
+
+        // Dibujar puntos para proteína
+        this.dibujarPuntosDatosApilados(ctx, valoresProteina, 'rgb(99, 102, 241)', padding, graphWidth, graphHeight, maxValueDibujo, valoresGrasa);
+
+        // Dibujar ejes con valores correctos
+        // Para calidadLeche, usar maxValueDibujo para mostrar valores consistentes con el apilamiento
+        const maxValueParaEjes = maxValueDibujo; // Siempre es calidadLeche en esta función
+        this.dibujarEjes(ctx, padding, graphWidth, graphHeight, maxValueParaEjes, 'calidadLeche', valoresProteina, valoresGrasa);
+
+        // Dibujar etiquetas de los últimos valores para proteína y grasa
+        this.dibujarEtiquetaUltimoValorApilado(ctx, valoresProteina, valoresGrasa, rect, padding, graphWidth, graphHeight, maxValueDibujo);
+
+        // Dibujar leyenda al final para que no se sobrescriba
+        this.dibujarLeyendaCalidad(ctx, rect);
+    }
+
+    /**
+     * Dibujar etiquetas para gráfico de área apilada
+     */
+    dibujarEtiquetaUltimoValorApilado(ctx, valoresProteina, valoresGrasa, rect, padding, graphWidth, graphHeight, maxValue) {
+        if (valoresProteina.length === 0 || valoresGrasa.length === 0) return;
+        
+        const ultimoIndice = valoresProteina.length - 1;
+        const ultimoX = padding.left + graphWidth;
+        
+        // Etiqueta de proteína (en la altura del valor total)
+        const valorProteina = valoresProteina[ultimoIndice];
+        const valorGrasa = valoresGrasa[ultimoIndice];
+        const valorTotal = valorProteina + valorGrasa;
+        
+        const yProteina = padding.top + graphHeight - ((valorTotal - 0) / (maxValue - 0)) * graphHeight;
+        this.dibujarEtiquetaEnPosicion(ctx, valorProteina, ultimoX, yProteina, 'proteina');
+        
+        // Etiqueta de grasa (en la altura del valor de grasa)
+        const yGrasa = padding.top + graphHeight - ((valorGrasa - 0) / (maxValue - 0)) * graphHeight;
+        this.dibujarEtiquetaEnPosicion(ctx, valorGrasa, ultimoX, yGrasa, 'grasa');
+    }
+
+    /**
+     * Dibujar etiqueta en una posición específica
+     */
+    dibujarEtiquetaEnPosicion(ctx, valor, x, y, kpiId) {
+        // Formatear el valor según el KPI
+        const valorFormateado = this.formatearValorEtiqueta(valor, kpiId);
+        
+        // Configurar estilo de la etiqueta
+        ctx.font = 'bold 11px sans-serif';
+        
+        // Medir el texto para calcular el tamaño
+        const texto = valorFormateado;
+        const metrics = ctx.measureText(texto);
+        const paddingEtiqueta = 4;
+        const etiquetaWidth = metrics.width + paddingEtiqueta * 2;
+        const etiquetaHeight = 16;
+        
+        // Posicionar siempre a la izquierda del punto
+        const etiquetaX = x - etiquetaWidth - 8;
+        const etiquetaY = y - etiquetaHeight / 2;
+        
+        // Fondo semi-transparente
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(etiquetaX, etiquetaY, etiquetaWidth, etiquetaHeight);
+        
+        // Borde sutil
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(etiquetaX, etiquetaY, etiquetaWidth, etiquetaHeight);
+        
+        // Texto del valor
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.textAlign = 'left';
+        ctx.fillText(texto, etiquetaX + paddingEtiqueta, etiquetaY + 11);
+        
+        // Restaurar alineación
+        ctx.textAlign = 'left';
+    }
+
+    /**
+     * Dibujar leyenda para gráfico de calidad
+     */
+    dibujarLeyendaCalidad(ctx, rect) {
+        // Calcular posición centrada en la parte superior con separación
+        const anchoTotal = 120; // Ancho total de ambas leyendas + separación
+        const startX = (rect.width - anchoTotal) / 2;
+        
+        // Leyenda para Proteína (centrada en la parte superior)
+        ctx.fillStyle = 'rgb(99, 102, 241)';
+        ctx.fillRect(startX, 8, 12, 12);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '11px sans-serif';
+        ctx.fillText('Proteína', startX + 15, 17);
+        
+        // Leyenda para Grasa (centrada en la parte superior con más separación)
+        ctx.fillStyle = 'rgb(251, 146, 60)';
+        ctx.fillRect(startX + 65, 8, 12, 12);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText('Grasa', startX + 80, 17);
+    }
+
+    /**
+     * Dibujar línea superior para gráfico apilado
+     */
+    dibujarLineaSuperiorApilada(ctx, valores, color, padding, graphWidth, graphHeight, maxValue, valoresBase = null) {
+        const minValue = 0;
+        
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        valores.forEach((valor, i) => {
+            const x = padding.left + (i / (valores.length - 1)) * graphWidth;
+            let y;
+            
+            if (valoresBase && valoresBase[i] !== undefined) {
+                // Para gráfico apilado: valor total = valor + valorBase
+                const valorTotal = valor + valoresBase[i];
+                y = padding.top + graphHeight - ((valorTotal - minValue) / (maxValue - minValue)) * graphHeight;
+            } else {
+                // Para gráfico normal
+                y = padding.top + graphHeight - ((valor - minValue) / (maxValue - minValue)) * graphHeight;
+            }
+
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                const prevX = padding.left + ((i - 1) / (valores.length - 1)) * graphWidth;
+                let prevY;
+                
+                if (valoresBase && valoresBase[i - 1] !== undefined) {
+                    const prevValorTotal = valores[i - 1] + valoresBase[i - 1];
+                    prevY = padding.top + graphHeight - ((prevValorTotal - minValue) / (maxValue - minValue)) * graphHeight;
+                } else {
+                    prevY = padding.top + graphHeight - ((valores[i - 1] - minValue) / (maxValue - minValue)) * graphHeight;
+                }
+                
+                var cpX = (prevX + x) / 2;
+                ctx.quadraticCurveTo(prevX, prevY, cpX, (prevY + y) / 2);
+                ctx.quadraticCurveTo(x, y, x, y);
+            }
+        });
+
+        ctx.stroke();
+    }
+
+    /**
+     * Dibujar puntos de datos para gráfico apilado
+     */
+    dibujarPuntosDatosApilados(ctx, valores, color, padding, graphWidth, graphHeight, maxValue, valoresBase = null) {
+        const minValue = 0;
+        
+        valores.forEach((valor, i) => {
+            const x = padding.left + (i / (valores.length - 1)) * graphWidth;
+            let y;
+            
+            if (valoresBase && valoresBase[i] !== undefined) {
+                // Para gráfico apilado: valor total = valor + valorBase
+                const valorTotal = valor + valoresBase[i];
+                y = padding.top + graphHeight - ((valorTotal - minValue) / (maxValue - minValue)) * graphHeight;
+            } else {
+                // Para gráfico normal
+                y = padding.top + graphHeight - ((valor - minValue) / (maxValue - minValue)) * graphHeight;
+            }
+
+            // Dibujar punto
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            // Borde blanco para mejor visibilidad
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
+    }
+
+    /**
+     * Dibujar gráfico de línea con área
+     */
+    dibujarGraficoLineaArea(ctx, datos, rect, padding, graphWidth, graphHeight, kpiId) {
         const valores = datos.map(d => this.extraerValorKPI(kpiId, d));
         
         if (valores.length === 0) return;
         
         const maxValue = Math.max(...valores) * 1.1;
         const minValue = 0;
+        const color = this.getColorKPI(kpiId);
         
-        // Dibujar línea del gráfico
-        ctx.strokeStyle = '#6366f1';
-        ctx.lineWidth = 2;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        
-        // Crear gradiente para la línea
-        const gradient = ctx.createLinearGradient(0, 0, rect.width, 0);
-        gradient.addColorStop(0, '#6366f1');
-        gradient.addColorStop(1, '#8b5cf6');
-        ctx.strokeStyle = gradient;
-        
-        // Dibujar la línea
-        ctx.beginPath();
-        valores.forEach((valor, index) => {
-            const x = padding.left + (index / (valores.length - 1)) * graphWidth;
-            const y = padding.top + graphHeight - ((valor - minValue) / (maxValue - minValue)) * graphHeight;
-            
-            if (index === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        });
-        ctx.stroke();
-        
-        // Dibujar área bajo la línea con gradiente
-        const areaGradient = ctx.createLinearGradient(0, padding.top, 0, rect.height - padding.bottom);
-        areaGradient.addColorStop(0, 'rgba(99, 102, 241, 0.3)');
-        areaGradient.addColorStop(1, 'rgba(99, 102, 241, 0.05)');
-        
-        ctx.fillStyle = areaGradient;
-        ctx.beginPath();
-        valores.forEach((valor, index) => {
-            const x = padding.left + (index / (valores.length - 1)) * graphWidth;
-            const y = padding.top + graphHeight - ((valor - minValue) / (maxValue - minValue)) * graphHeight;
-            
-            if (index === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        });
-        ctx.lineTo(padding.left + graphWidth, padding.top + graphHeight);
-        ctx.lineTo(padding.left, padding.top + graphHeight);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Dibujar puntos de datos
-        valores.forEach((valor, index) => {
-            const x = padding.left + (index / (valores.length - 1)) * graphWidth;
-            const y = padding.top + graphHeight - ((valor - minValue) / (maxValue - minValue)) * graphHeight;
-            
-            // Punto normal
-            ctx.fillStyle = '#6366f1';
+        // Dibujar área bajo la línea
+        const drawArea = (valores, color, alpha = 0.3) => {
+            ctx.fillStyle = color.replace('rgb', 'rgba').replace(')', `, ${alpha})`);
             ctx.beginPath();
-            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+
+            valores.forEach((valor, i) => {
+                const x = padding.left + (i / (valores.length - 1)) * graphWidth;
+                const y = padding.top + graphHeight - ((valor - minValue) / (maxValue - minValue)) * graphHeight;
+
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    const prevX = padding.left + ((i - 1) / (valores.length - 1)) * graphWidth;
+                    const prevY = padding.top + graphHeight - ((valores[i - 1] - minValue) / (maxValue - minValue)) * graphHeight;
+                    const cpX = (prevX + x) / 2;
+                    ctx.quadraticCurveTo(prevX, prevY, cpX, (prevY + y) / 2);
+                    ctx.quadraticCurveTo(x, y, x, y);
+                }
+            });
+
+            // Cerrar el área
+            ctx.lineTo(padding.left + graphWidth, padding.top + graphHeight);
+            ctx.lineTo(padding.left, padding.top + graphHeight);
+            ctx.closePath();
             ctx.fill();
-            
-            // Resaltar último punto
-            if (index === valores.length - 1) {
-                ctx.strokeStyle = '#6366f1';
-                ctx.lineWidth = 2;
+        };
+
+        // Dibujar línea suave
+        if (kpiId === 'calidadLeche') {
+            // Gráfico de área apilada para calidad
+            this.dibujarGraficoAreaApilada(ctx, datos, rect, padding, graphWidth, graphHeight);
+        } else if (kpiId === 'concentradoDiario') {
+            // Gráfico de barras para concentrado
+            this.dibujarGraficoBarras(ctx, valores, rect, padding, graphWidth, graphHeight, maxValue, datos);
+        } else {
+            // Gráfico de línea con área para otros KPIs
+            drawArea(valores, color);
+            drawSmoothLine(valores, color);
+
+            // Dibujar puntos
+            valores.forEach((valor, i) => {
+                const x = padding.left + (i / (valores.length - 1)) * graphWidth;
+                const y = padding.top + graphHeight - ((valor - minValue) / (maxValue - minValue)) * graphHeight;
+
+                ctx.fillStyle = color;
                 ctx.beginPath();
-                ctx.arc(x, y, 5, 0, 2 * Math.PI);
-                ctx.stroke();
-                
-                // Punto blanco central
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.arc(x, y, 2, 0, 2 * Math.PI);
+                ctx.arc(x, y, 3, 0, 2 * Math.PI);
                 ctx.fill();
-            }
-        });
+            });
+        }
+
+        // Dibujar ejes
+        this.dibujarEjes(ctx, padding, graphWidth, graphHeight, maxValue, kpiId);
+
+        // Dibujar leyenda abajo del gráfico
+        try {
+            this.dibujarLeyendaGrafico(ctx, rect, kpiId);
+        } catch (error) {
+            console.error('Error al dibujar leyenda:', error);
+        }
+    }
+
+    /**
+     * Dibujar leyenda abajo del gráfico
+     */
+    dibujarLeyendaGrafico(ctx, rect, kpiId) {
+        const nombresKPI = {
+            'produccionDiaria': 'Leche Diaria',
+            'concentradoDiario': 'Concentrado Diario',
+            'calidadLeche': 'Calidad de Leche',
+            'vacasOrdeñaEvol': 'Vacas en Ordeña',
+            'costoDieta': 'Costo de Dieta',
+            'stockDiario': 'Stock de Alimento'
+        };
+
+        const nombre = nombresKPI[kpiId] || kpiId;
         
-        // Dibujar ejes muy sutiles
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        // Posicionar leyenda abajo del gráfico
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(nombre, rect.width / 2, rect.height - 5);
+        ctx.textAlign = 'left'; // Restaurar alineación
+    }
+
+    /**
+     * Dibujar gráfico de barras
+     */
+    dibujarGraficoBarras(ctx, valores, rect, padding, graphWidth, graphHeight, maxValue, datos) {
+        const minValue = 0;
+        const barWidth = graphWidth / valores.length * 0.7;
+        const barSpacing = graphWidth / valores.length * 0.3;
+
+        valores.forEach((valor, i) => {
+            const x = padding.left + i * (barWidth + barSpacing) + barSpacing / 2;
+            const barHeight = ((valor - minValue) / (maxValue - minValue)) * graphHeight;
+            const y = padding.top + graphHeight - barHeight;
+
+            // Gradiente para barras
+            const gradient = ctx.createLinearGradient(0, y, 0, y + barHeight);
+            gradient.addColorStop(0, 'rgb(251, 146, 60)');
+            gradient.addColorStop(1, 'rgb(154, 52, 18)');
+            
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, barWidth, barHeight);
+        });
+
+        // Dibujar ejes
+        this.dibujarEjes(ctx, padding, graphWidth, graphHeight, maxValue, 'concentradoDiario', null, null, datos);
+
+        // Dibujar etiqueta del último valor
+        this.dibujarEtiquetaUltimoValor(ctx, valores, rect, padding, graphWidth, graphHeight, maxValue, 'concentradoDiario');
+
+        // Dibujar leyenda abajo del gráfico
+        this.dibujarLeyendaGrafico(ctx, rect, 'concentradoDiario');
+    }
+
+    /**
+     * Dibujar ejes del gráfico con valores y unidades
+     */
+    dibujarEjes(ctx, padding, graphWidth, graphHeight, maxValue = null, kpiId = null, valoresProteina = null, valoresGrasa = null, datos = null) {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.lineWidth = 1;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.font = '10px sans-serif';
         
         // Eje X
         ctx.beginPath();
@@ -758,72 +1188,176 @@ class DashboardModule {
         ctx.lineTo(padding.left, padding.top + graphHeight);
         ctx.stroke();
         
-        // Dibujar líneas de grid muy sutiles
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        ctx.lineWidth = 0.5;
+        // Obtener unidad para el eje Y
+        const unidad = this.obtenerUnidadKPI(kpiId);
         
-        // Líneas horizontales
+        // Líneas horizontales de guía con valores
         for (let i = 0; i <= 4; i++) {
             const y = padding.top + (i / 4) * graphHeight;
+            
+            // Línea de guía
             ctx.beginPath();
             ctx.moveTo(padding.left, y);
             ctx.lineTo(padding.left + graphWidth, y);
             ctx.stroke();
+            
+            // Valor en el eje Y con unidad
+            if (maxValue !== null) {
+                let value;
+                if (kpiId === 'calidadLeche' && valoresGrasa) {
+                    // Para calidadLeche, mostrar solo valores de grasa
+                    const indice = Math.floor((i / 4) * (valoresGrasa.length - 1));
+                    value = valoresGrasa[indice] || 0;
+                } else {
+                    value = maxValue * (1 - i / 4);
+                }
+                const formattedValue = this.formatearValorEje(value, kpiId);
+                ctx.fillText(formattedValue, padding.left - 35, y + 3);
+            }
         }
         
-        // Dibujar etiquetas de valores en el eje Y
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-        ctx.font = '10px Inter, sans-serif';
-        ctx.textAlign = 'right';
+        // Etiqueta de unidad en el eje Y
+        if (unidad && maxValue !== null) {
+            ctx.save();
+            ctx.translate(padding.left - 50, padding.top + graphHeight / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(unidad, 0, 0);
+            ctx.restore();
+        }
         
-        for (let i = 0; i <= 4; i++) {
-            const value = maxValue - (i / 4) * maxValue;
-            const y = padding.top + (i / 4) * graphHeight;
-            const text = this.formatearValorKPI(kpiId, value);
-            ctx.fillText(text, padding.left - 5, y + 3);
+        // Valores en el eje X (fechas)
+        if (kpiId && datos && datos.length > 0) {
+            console.log('Dibujando fechas para KPI:', kpiId, 'con', datos.length, 'datos');
+            console.log('Primer dato:', datos[0]);
+            
+            // Ajustar dinámicamente la cantidad de fechas mostradas
+            let maxFechas = 5; // Por defecto
+            if (datos.length <= 10) {
+                maxFechas = datos.length; // Mostrar todas si son pocas
+            } else if (datos.length <= 30) {
+                maxFechas = Math.ceil(datos.length / 3); // 1 de cada 3
+            } else if (datos.length <= 90) {
+                maxFechas = Math.ceil(datos.length / 7); // 1 por semana
+            } else {
+                maxFechas = Math.ceil(datos.length / 15); // 1 cada 15 días
+            }
+            
+            const step = Math.max(1, Math.floor(datos.length / maxFechas));
+            console.log('Step para fechas:', step, 'mostrando', Math.ceil(datos.length / step), 'fechas');
+            
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 255, 255, 1.0)'; // Máximo brillo
+            ctx.font = 'bold 11px sans-serif'; // Más grande y en negrita
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top'; // Alineación superior
+            
+            for (let i = 0; i < datos.length; i += step) {
+                const x = padding.left + (i / (datos.length - 1)) * graphWidth;
+                const fecha = new Date(datos[i].fecha);
+                const fechaStr = `${fecha.getDate()}/${fecha.getMonth() + 1}`;
+                console.log(`Fecha ${i}:`, fechaStr, 'en x:', x);
+                
+                // Dibujar rectángulo de fondo para mayor visibilidad
+                const textWidth = ctx.measureText(fechaStr).width;
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(x - textWidth/2 - 2, padding.top + graphHeight + 22, textWidth + 4, 16);
+                
+                // Dibujar el texto
+                ctx.fillStyle = 'rgba(255, 255, 255, 1.0)';
+                ctx.fillText(fechaStr, x, padding.top + graphHeight + 25);
+            }
+            
+            ctx.restore();
+        } else {
+            console.log('No se dibujan fechas. kpiId:', kpiId, 'datos:', datos);
+        }
+        
+        // Etiqueta del eje X
+        ctx.save();
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Fecha', padding.left + graphWidth / 2, padding.top + graphHeight + 35);
+        ctx.restore();
+    }
+
+    /**
+     * Obtener unidad para KPI
+     */
+    obtenerUnidadKPI(kpiId) {
+        const unidades = {
+            'produccionDiaria': 'Litros',
+            'concentradoDiario': 'kg',
+            'calidadLeche': '%',
+            'vacasOrdeñaEvol': 'Vacas',
+            'costoDieta': '$',
+            'stockDiario': 'kg'
+        };
+        return unidades[kpiId] || '';
+    }
+
+    /**
+     * Formatear valor para eje Y
+     */
+    formatearValorEje(value, kpiId) {
+        if (kpiId === 'calidadLeche') {
+            // Para calidadLeche, mostrar el valor total apilado
+            return `${value.toFixed(1)}%`;
+        } else if (kpiId === 'vacasOrdeñaEvol') {
+            return Math.round(value).toString();
+        } else if (kpiId === 'costoDieta') {
+            return `$${Math.round(value)}`;
+        } else if (kpiId === 'stockDiario') {
+            return `${Math.round(value)}kg`;
+        } else {
+            return Math.round(value).toString();
         }
     }
 
+    /**
+     * Obtener color para KPI
+     */
+    getColorKPI(kpiId) {
+        const colors = {
+            'produccionDiaria': 'rgb(99, 102, 241)',
+            'concentradoDiario': 'rgb(251, 146, 60)',
+            'vacasOrdeñaEvol': 'rgb(34, 197, 94)',
+            'costoDieta': 'rgb(239, 68, 68)',
+            'stockDiario': 'rgb(168, 85, 247)',
+            'calidadLeche': 'rgb(99, 102, 241)'
+        };
+        return colors[kpiId] || 'rgb(99, 102, 241)';
+    }
+
+    /**
+     * Extraer valor de KPI desde dato
+     */
     extraerValorKPI(kpiId, dato) {
         const kpiMappings = {
-            'produccionDiaria': 'lecheTotal',
-            'kpiProduccionDiaria': 'lecheTotal',
-            'lechePlanta': 'lechePlanta',
-            'kpiLechePlanta': 'lechePlanta',
-            'totalVacas': 'totalOrdeña',
-            'kpiTotalVacas': 'totalOrdeña',
-            'vacasEntrantes': 'ingresoVacas',
-            'kpiVacasEntrantes': 'ingresoVacas',
-            'vacasSalientes': 'salidaVacas',
-            'kpiVacasSalientes': 'salidaVacas',
-            'vacasSecas': 'vacasSecas',
-            'kpiVacasSecas': 'vacasSecas',
-            'litrosVacaDia': 'promedioPorVaca',
-            'kpiLitrosVacaDia': 'promedioPorVaca',
-            'lecheDiaria': 'lecheTotal',
-            'kpiLecheDiaria': 'lecheTotal',
+            'produccionDiaria': 'lecheDiaria',
+            'kpiProduccionDiaria': 'lecheDiaria',
+            'concentradoDiario': 'concentradoDiario',
+            'kpiConcentradoDiario': 'concentradoDiario',
+            'calidadLeche': 'proteina',
+            'kpiCalidadLeche': 'proteina',
             'proteina': 'proteina',
             'kpiProteina': 'proteina',
             'grasa': 'grasa',
             'kpiGrasa': 'grasa',
-            'costoDiariaLitro': 'costoPorLitro',
-            'kpiCostoDiariaLitro': 'costoPorLitro',
-            'costoDiariaVaca': 'costoPorVaca',
-            'kpiCostoDiariaVaca': 'costoPorVaca',
-            'costoTotalDiario': 'costoTotal',
-            'kpiCostoTotalDiario': 'costoTotal',
-            'concentrado': 'kilosConcentrado',
-            'kpiConcentrado': 'kilosConcentrado',
-            'ensilaje': 'kilosEnsilaje',
-            'kpiEnsilaje': 'kilosEnsilaje',
-            'otrosForrajes': 'kilosOtrosForrajes',
-            'kpiOtrosForrajes': 'kilosOtrosForrajes',
-            'salesAditivos': 'kilosSalesOtros',
-            'kpiSalesAditivos': 'kilosSalesOtros',
-            'fibra': 'kilosFibra',
-            'kpiFibra': 'kilosFibra',
-            'siloVaca': 'siloPorVaca',
-            'kpiSiloVaca': 'siloPorVaca'
+            'vacasOrdeñaEvol': 'vacasOrdeña',
+            'kpiVacasOrdeñaEvol': 'vacasOrdeña',
+            'costoDieta': 'costoDieta',
+            'kpiCostoDieta': 'costoDieta',
+            'stockDiario': 'stockDiario',
+            'kpiStockDiario': 'stockDiario',
+            'stockUltimoDia': 'stockDiario',
+            'kpiStockUltimoDia': 'stockDiario',
+            'lecheDiaria': 'lecheDiaria',
+            'kpiLecheDiaria': 'lecheDiaria',
+            'litrosVacaDia': 'litrosVacaDia',
+            'kpiLitrosVacaDia': 'litrosVacaDia',
+            'vacasOrdeña': 'vacasOrdeña',
+            'kpiVacasOrdeña': 'vacasOrdeña'
         };
         
         const campo = kpiMappings[kpiId];
@@ -832,268 +1366,271 @@ class DashboardModule {
         return valor;
     }
 
-    formatearValorKPI(kpiId, valor) {
-        const formatters = {
-            'produccionDiaria': (v) => `${v.toFixed(1)} L`,
-            'kpiProduccionDiaria': (v) => `${v.toFixed(1)} L`,
-            'lechePlanta': (v) => `${v.toFixed(0)} L`,
-            'kpiLechePlanta': (v) => `${v.toFixed(0)} L`,
-            'totalVacas': (v) => v.toString(),
-            'kpiTotalVacas': (v) => v.toString(),
-            'vacasEntrantes': (v) => v.toString(),
-            'kpiVacasEntrantes': (v) => v.toString(),
-            'vacasSalientes': (v) => v.toString(),
-            'kpiVacasSalientes': (v) => v.toString(),
-            'vacasSecas': (v) => v.toString(),
-            'kpiVacasSecas': (v) => v.toString(),
-            'litrosVacaDia': (v) => `${v.toFixed(1)} L`,
-            'kpiLitrosVacaDia': (v) => `${v.toFixed(1)} L`,
-            'lecheDiaria': (v) => `${v.toFixed(1)} L`,
-            'kpiLecheDiaria': (v) => `${v.toFixed(1)} L`,
-            'proteina': (v) => `${v.toFixed(1)}%`,
-            'kpiProteina': (v) => `${v.toFixed(1)}%`,
-            'grasa': (v) => `${v.toFixed(1)}%`,
-            'kpiGrasa': (v) => `${v.toFixed(1)}%`,
-            'costoDiariaLitro': (v) => `$${v.toFixed(1)}`,
-            'kpiCostoDiariaLitro': (v) => `$${v.toFixed(1)}`,
-            'costoDiariaVaca': (v) => `$${v.toFixed(1)}`,
-            'kpiCostoDiariaVaca': (v) => `$${v.toFixed(1)}`,
-            'costoTotalDiario': (v) => `$${v.toFixed(0)}`,
-            'kpiCostoTotalDiario': (v) => `$${v.toFixed(0)}`,
-            'concentrado': (v) => `${v.toFixed(1)} kg`,
-            'kpiConcentrado': (v) => `${v.toFixed(1)} kg`,
-            'ensilaje': (v) => `${v.toFixed(1)} kg`,
-            'kpiEnsilaje': (v) => `${v.toFixed(1)} kg`,
-            'otrosForrajes': (v) => `${v.toFixed(1)} kg`,
-            'kpiOtrosForrajes': (v) => `${v.toFixed(1)} kg`,
-            'salesAditivos': (v) => `${v.toFixed(1)} kg`,
-            'kpiSalesAditivos': (v) => `${v.toFixed(1)} kg`,
-            'fibra': (v) => `${v.toFixed(1)} kg`,
-            'kpiFibra': (v) => `${v.toFixed(1)} kg`,
-            'siloVaca': (v) => `${v.toFixed(1)} kg`,
-            'kpiSiloVaca': (v) => `${v.toFixed(1)} kg`
-        };
+    /**
+     * Obtener stock del día anterior
+     */
+    obtenerStockDiaAnterior(datos, fechaActual) {
+        if (!datos || datos.length === 0) return null;
         
-        const formatter = formatters[kpiId] || ((v) => v.toString());
-        return formatter(valor);
+        const fechaActualDate = new Date(fechaActual);
+        const fechaAnteriorDate = new Date(fechaActualDate);
+        fechaAnteriorDate.setDate(fechaAnteriorDate.getDate() - 1);
+        
+        const fechaAnteriorStr = fechaAnteriorDate.toISOString().split('T')[0];
+        
+        // Filtrar datos según el fundo seleccionado
+        const datosFiltrados = this.filtrarDatosPorFundo(datos);
+        
+        // Buscar registro del día anterior
+        const registroAnterior = datosFiltrados.find(d => d.fecha === fechaAnteriorStr);
+        
+        return registroAnterior ? (registroAnterior.stockDiario || 0) : null;
     }
-    async crearGraficos(datos) {
-        // Destruir gráficos existentes
-        Object.values(this.charts).forEach(chart => {
-            ChartUtils.destruirGrafico(chart);
+
+    /**
+     * Obtener el registro más reciente
+     */
+    obtenerRegistroMasReciente(datos) {
+        if (!datos || datos.length === 0) return null;
+        
+        // Filtrar datos según el fundo seleccionado
+        const datosFiltrados = this.filtrarDatosPorFundo(datos);
+        
+        if (datosFiltrados.length === 0) return null;
+        
+        // Ordenar por fecha y obtener el más reciente
+        return datosFiltrados.sort((a, b) => new Date(b.fecha) - new Date(a.fecha))[0];
+    }
+
+    /**
+     * Mostrar estado vacío
+     */
+    mostrarEstadoVacio() {
+        console.log('📊 Mostrando estado vacío del dashboard');
+        
+        // Actualizar todos los KPIs con valores por defecto
+        const kpis = [
+            'kpiLecheDiaria', 'kpiLitrosVacaDia', 'kpiVacasOrdeña', 'kpiCalidadLeche',
+            'kpiConcentradoDiario', 'kpiCostoDietaLitro', 'kpiCostoDieta', 'kpiCostoAlimentacion',
+            'kpiIngresoEstimado', 'kpiMargenEstimado', 'kpiProduccionDiaria', 'kpiVacasOrdeñaEvol'
+        ];
+        
+        kpis.forEach(id => {
+            this.actualizarKPI(id, '0');
         });
-
-        // Obtener datos para los últimos 7 días
-        const datosRecientes = CalculationUtils.filtrarPorPeriodo(datos, 7);
-        
-        if (datosRecientes.length === 0) return;
-
-        // Preparar datos para gráficos
-        const labels = datosRecientes.map(d => {
-            const fecha = new Date(d.fecha);
-            return fecha.toLocaleDateString('es', { day: 'numeric', month: 'short' });
-        });
-
-        // Gráfico de producción
-        const datosProduccion = datosRecientes.map(d => d.lecheTotal || 0);
-        this.charts.produccion = ChartUtils.crearGraficoProduccion('chartProduccion', datosProduccion, labels);
-
-        // Gráfico de alimentación
-        const datosAlimentacion = {
-            forrajes: datosRecientes.map(d => d.totalDia || 0),
-            suplementos: datosRecientes.map(d => 
-                (d.kilosEnergia || 0) + (d.kilosProteina || 0) + 
-                (d.kilosAditivos || 0) + (d.kilosSalesOtros || 0)
-            )
-        };
-        this.charts.alimentacion = ChartUtils.crearGraficoAlimentacion('chartAlimentacion', datosAlimentacion, labels);
-
-        // Gráfico de evolución del rebaño
-        const datosRebaño = {
-            labels: labels,
-            ordenia: datosRecientes.map(d => d.totalOrdeña || d.vacasEstanque || 0),
-            total: datosRecientes.map(d => (d.totalOrdeña || d.vacasEstanque || 0) + (d.vacasDescarte || 0))
-        };
-        this.charts.rebaño = ChartUtils.crearGraficoRebaño('chartRebaño', datosRebaño);
-
-        // Gráfico de distribución de costos
-        const ultimoDato = datosRecientes[datosRecientes.length - 1];
-        const datosDistribucion = {
-            labels: ['Ensilaje', 'Heno', 'Ración', 'Otros Forrajes', 'Suplementos'],
-            values: [
-                ultimoDato.kilosEnsilaje || 0,
-                ultimoDato.kilosHeno || 0,
-                ultimoDato.kilosRacion || 0,
-                ultimoDato.kilosOtrosForrajes || 0,
-                (ultimoDato.kilosEnergia || 0) + (ultimoDato.kilosProteina || 0)
-            ]
-        };
-        this.charts.distribucion = ChartUtils.crearGraficoDistribucion('chartDistribucion', datosDistribucion);
     }
 
-    async detectarYMostrarAlertas(datos) {
-        try {
-            this.alertas = this.detectarAlertas(datos);
-            this.mostrarAlertas();
-        } catch (error) {
-            console.error('❌ Error al detectar alertas:', error);
-        }
-    }
-
-    detectarAlertas(datos) {
-        const alertas = [];
+    /**
+     * Generar alertas basadas en los datos
+     */
+    generarAlertas(datos) {
+        this.alertas = [];
         
-        if (datos.length === 0) return alertas;
-
-        // Detectar outliers en producción
-        const outliersProduccion = CalculationUtils.detectarOutliers(datos, 'lecheTotal');
-        outliersProduccion.forEach(dato => {
-            alertas.push({
+        if (!datos || datos.length === 0) return;
+        
+        // Obtener los últimos 7 días para alertas recientes
+        const ultimos7Dias = datos.slice(-7);
+        const diaActual = ultimos7Dias[ultimos7Dias.length - 1];
+        
+        // Alerta de producción baja
+        if (diaActual.lecheDiaria < 800) {
+            this.alertas.push({
                 tipo: 'warning',
-                titulo: 'Producción Inusual',
-                mensaje: `Producción de ${dato.lecheTotal}L en ${dato.fundo} fuera de rango normal`,
-                fecha: dato.fecha,
-                fundo: dato.fundo,
-                icono: '⚠️'
-            });
-        });
-
-        // Detectar producción baja
-        const datosRecientes = CalculationUtils.filtrarPorPeriodo(datos, 3);
-        const promedioReciente = CalculationUtils.calcularPromedioPorVaca(datosRecientes);
-        
-        if (promedioReciente < 10 && datosRecientes.length > 0) {
-            alertas.push({
-                tipo: 'danger',
-                titulo: 'Producción Baja',
-                mensaje: `El promedio de ${promedioReciente}L/vaca está por debajo del umbral recomendado`,
-                fecha: new Date().toISOString().split('T')[0],
-                icono: '🚨'
+                titulo: 'Producción por debajo del objetivo',
+                mensaje: `La producción diaria de ${diaActual.lecheDiaria}L está un ${Math.round((1 - diaActual.lecheDiaria/1000) * 100)}% por debajo del objetivo`,
+                fecha: diaActual.fecha,
+                fundo: diaActual.fundo
             });
         }
-
-        // Detectar problemas en observaciones
-        const palabrasClave = ['problema', 'enfermo', 'muerto', 'baja', 'urgente', 'emergencia'];
-        datos.forEach(dato => {
-            if (dato.observaciones) {
-                const observacion = dato.observaciones.toLowerCase();
-                palabrasClave.forEach(palabra => {
-                    if (observacion.includes(palabra)) {
-                        alertas.push({
-                            tipo: 'danger',
-                            titulo: 'Alerta Crítica',
-                            mensaje: `Problema detectado: ${dato.observaciones.substring(0, 50)}...`,
-                            fecha: dato.fecha,
-                            fundo: dato.fundo,
-                            icono: '🚨'
-                        });
-                    }
+        
+        // Alerta de stock crítico
+        if (diaActual.stockDiario < 100) {
+            this.alertas.push({
+                tipo: 'danger',
+                titulo: 'Stock crítico de alimento',
+                mensaje: `Quedan solo ${diaActual.stockDiario}kg de alimento, suficiente para ${Math.round(diaActual.stockDiario/diaActual.concentradoDiario)} días`,
+                fecha: diaActual.fecha,
+                fundo: diaActual.fundo
+            });
+        }
+        
+        // Alerta de calidad baja
+        if (diaActual.proteina < 3.0 || diaActual.grasa < 3.5) {
+            this.alertas.push({
+                tipo: 'warning',
+                titulo: 'Calidad de leche por debajo del estándar',
+                mensaje: `Proteína: ${diaActual.proteina.toFixed(1)}%, Grasa: ${diaActual.grasa.toFixed(1)}% - Valores por debajo del estándar de calidad`,
+                fecha: diaActual.fecha,
+                fundo: diaActual.fundo
+            });
+        }
+        
+        // Alerta de costo elevado
+        if (diaActual.costoDietaLitro > 0.15) {
+            this.alertas.push({
+                tipo: 'info',
+                titulo: 'Costo de dieta elevado',
+                mensaje: `El costo por litro de $${diaActual.costoDietaLitro.toFixed(3)} está por encima del óptimo`,
+                fecha: diaActual.fecha,
+                fundo: diaActual.fundo
+            });
+        }
+        
+        // Alerta de éxito en producción
+        if (diaActual.lecheDiaria > 1200) {
+            this.alertas.push({
+                tipo: 'success',
+                titulo: '¡Excelente producción!',
+                mensaje: `Producción récord de ${diaActual.lecheDiaria}L, superando el objetivo en ${Math.round((diaActual.lecheDiaria/1000 - 1) * 100)}%`,
+                fecha: diaActual.fecha,
+                fundo: diaActual.fundo
+            });
+        }
+        
+        // Alerta de tendencia negativa (comparación con hace 3 días)
+        if (ultimos7Dias.length >= 4) {
+            const hace3Dias = ultimos7Dias[ultimos7Dias.length - 4];
+            const variacion = ((diaActual.lecheDiaria - hace3Dias.lecheDiaria) / hace3Dias.lecheDiaria) * 100;
+            
+            if (variacion < -10) {
+                this.alertas.push({
+                    tipo: 'warning',
+                    titulo: 'Tendencia de producción negativa',
+                    mensaje: `La producción ha disminuido un ${Math.abs(variacion).toFixed(1)}% en los últimos 3 días`,
+                    fecha: diaActual.fecha,
+                    fundo: diaActual.fundo
                 });
             }
-        });
-
-        // Detectar buenas noticias
-        const palabrasBuenas = ['excelente', 'mejor', 'record', 'óptimo', 'muy bueno'];
-        datos.forEach(dato => {
-            if (dato.observaciones) {
-                const observacion = dato.observaciones.toLowerCase();
-                palabrasBuenas.forEach(palabra => {
-                    if (observacion.includes(palabra)) {
-                        alertas.push({
-                            tipo: 'success',
-                            titulo: 'Buen Desempeño',
-                            mensaje: dato.observaciones.substring(0, 50) + '...',
-                            fecha: dato.fecha,
-                            fundo: dato.fundo,
-                            icono: '🎉'
-                        });
-                    }
-                });
-            }
-        });
-
-        // Ordenar alertas por tipo y fecha
-        return alertas.sort((a, b) => {
-            const prioridad = { danger: 3, warning: 2, success: 1, info: 0 };
-            if (prioridad[a.tipo] !== prioridad[b.tipo]) {
-                return prioridad[b.tipo] - prioridad[a.tipo];
-            }
-            return new Date(b.fecha) - new Date(a.fecha);
-        }).slice(0, 10); // Limitar a 10 alertas más importantes
+        }
+        
+        console.log(`📊 Generadas ${this.alertas.length} alertas`);
     }
 
+    /**
+     * Mostrar alertas en el dashboard
+     */
     mostrarAlertas() {
-        const container = document.getElementById('alertasContainer');
-        if (!container) return;
-
+        const alertsContainer = document.querySelector('.alerts-container');
+        if (!alertsContainer) return;
+        
         if (this.alertas.length === 0) {
-            container.innerHTML = `
-                <div class="alert-item info">
-                    <div class="alert-icon">ℹ️</div>
-                    <div class="alert-content">
-                        <strong>Sin alertas</strong>
-                        <p>No hay eventos importantes que reportar</p>
-                    </div>
+            alertsContainer.innerHTML = `
+                <h3>🔔 Alertas</h3>
+                <div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <p>No hay alertas activas</p>
                 </div>
             `;
             return;
         }
-
-        container.innerHTML = this.alertas.map(alerta => `
+        
+        const alertsHTML = this.alertas.map(alerta => `
             <div class="alert-item ${alerta.tipo}">
-                <div class="alert-icon">${alerta.icono}</div>
+                <div class="alert-icon">
+                    ${alerta.tipo === 'danger' ? '🚨' : 
+                      alerta.tipo === 'warning' ? '⚠️' : 
+                      alerta.tipo === 'success' ? '✅' : 'ℹ️'}
+                </div>
                 <div class="alert-content">
-                    <strong>${alerta.titulo}</strong>
+                    <h4>${alerta.titulo}</h4>
                     <p>${alerta.mensaje}</p>
                     <div class="alert-meta">
-                        <small>${alerta.fundo || 'Global'} • ${new Date(alerta.fecha).toLocaleDateString('es')}</small>
+                        ${alerta.fundo} • ${new Date(alerta.fecha).toLocaleDateString('es-CL')}
                     </div>
                 </div>
             </div>
         `).join('');
+        
+        alertsContainer.innerHTML = `
+            <h3>🔔 Alertas</h3>
+            <div class="alerts-list">
+                ${alertsHTML}
+            </div>
+        `;
     }
 
-    setupAutoActualizacion() {
-        // Actualizar cada 5 minutos
-        this.actualizacionIntervalo = setInterval(() => {
-            this.cargarDatos();
-        }, 5 * 60 * 1000);
+    /**
+     * Inicializar selector de fechas con el rango completo de datos
+     */
+    inicializarSelectorFechas() {
+        if (!this.datosOriginales || this.datosOriginales.length === 0) return;
+        
+        const fechaInicio = new Date(this.datosOriginales[0].fecha);
+        const fechaFin = new Date(this.datosOriginales[this.datosOriginales.length - 1].fecha);
+        
+        const inputInicio = document.getElementById('fechaInicio');
+        const inputFin = document.getElementById('fechaFin');
+        
+        if (inputInicio && inputFin) {
+            inputInicio.value = fechaInicio.toISOString().split('T')[0];
+            inputFin.value = fechaFin.toISOString().split('T')[0];
+            
+            this.fechaInicio = inputInicio.value;
+            this.fechaFin = inputFin.value;
+            
+            console.log(`📅 Selector de fechas inicializado: ${this.fechaInicio} a ${this.fechaFin}`);
+        }
     }
 
-    // Método para actualización manual
-    async actualizar() {
-        await this.cargarDatos();
-        window.plataforma.mostrarNotificacion('✅ Dashboard actualizado', 'success');
-    }
-
-    // Exportar dashboard como imagen
-    exportarDashboard() {
-        // Implementar exportación de dashboard
-        const dashboard = document.querySelector('.dashboard-layout');
-        if (dashboard) {
-            html2canvas(dashboard).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `dashboard_${new Date().toISOString().split('T')[0]}.png`;
-                link.href = canvas.toDataURL();
-                link.click();
+    /**
+     * Aplicar filtros de fundo y fechas
+     */
+    aplicarFiltros(datos) {
+        let datosFiltrados = [...datos];
+        
+        // Filtrar por fundo
+        if (this.fundoSeleccionado !== 'todos') {
+            datosFiltrados = datosFiltrados.filter(d => d.fundo === this.fundoSeleccionado);
+        }
+        
+        // Filtrar por rango de fechas
+        if (this.fechaInicio && this.fechaFin) {
+            const inicio = new Date(this.fechaInicio);
+            const fin = new Date(this.fechaFin);
+            fin.setHours(23, 59, 59, 999); // Incluir todo el día final
+            
+            datosFiltrados = datosFiltrados.filter(d => {
+                const fecha = new Date(d.fecha);
+                return fecha >= inicio && fecha <= fin;
             });
         }
+        
+        return datosFiltrados;
     }
 
-    // Limpiar módulo
-    destroy() {
-        // Limpiar intervalo de actualización
-        if (this.actualizacionIntervalo) {
-            clearInterval(this.actualizacionIntervalo);
+    /**
+     * Filtrar por fechas seleccionadas
+     */
+    filtrarPorFechas() {
+        const inputInicio = document.getElementById('fechaInicio');
+        const inputFin = document.getElementById('fechaFin');
+        
+        if (inputInicio && inputFin) {
+            this.fechaInicio = inputInicio.value;
+            this.fechaFin = inputFin.value;
+            
+            // Validar que la fecha de inicio no sea mayor que la de fin
+            if (this.fechaInicio && this.fechaFin && this.fechaInicio > this.fechaFin) {
+                // Intercambiar fechas si están en orden incorrecto
+                const temp = this.fechaInicio;
+                this.fechaInicio = this.fechaFin;
+                this.fechaFin = temp;
+                inputInicio.value = this.fechaInicio;
+                inputFin.value = this.fechaFin;
+            }
+            
+            console.log(`📅 Filtrando por fechas: ${this.fechaInicio} a ${this.fechaFin}`);
+            this.actualizarDashboard();
         }
+    }
 
-        // Destruir gráficos
-        Object.values(this.charts).forEach(chart => {
-            ChartUtils.destruirGrafico(chart);
-        });
-
-        this.charts = {};
-        this.alertas = [];
+    /**
+     * Resetear fechas al rango completo
+     */
+    resetearFechas() {
+        this.inicializarSelectorFechas();
+        console.log('📅 Fechas reseteadas al rango completo');
+        this.actualizarDashboard();
     }
 }
 
