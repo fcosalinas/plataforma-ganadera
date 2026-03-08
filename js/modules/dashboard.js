@@ -118,6 +118,10 @@ class DashboardModule {
      * Actualizar dashboard completo
      */
     actualizarDashboard() {
+        // Limpiar consola para mejor visualización
+        console.clear();
+        console.log('🔄 Dashboard actualizado - Consola limpiada');
+        
         if (!this.datosOriginales || this.datosOriginales.length === 0) {
             this.mostrarEstadoVacio();
             return;
@@ -142,6 +146,8 @@ class DashboardModule {
         this.mostrarAlertas();
         
         console.log(`📊 Dashboard actualizado con ${datosFiltrados.length} registros filtrados`);
+        console.log(`📅 Rango seleccionado: ${this.fechaInicio} a ${this.fechaFin}`);
+        console.log(`🏭 Fundo seleccionado: ${this.fundoSeleccionado === 'todos' ? 'Todos los fundos' : this.fundoSeleccionado}`);
     }
 
     /**
@@ -153,79 +159,557 @@ class DashboardModule {
         } else {
             this.actualizarKPIsFundoEspecifico(datos, this.fundoSeleccionado);
         }
+        
+        // Actualizar tabla de inventario
+        this.actualizarTablaInventario(datos);
     }
 
     /**
      * Actualizar KPIs para todos los fundos
      */
     actualizarKPIsTodosFundos(datos) {
-        // Agrupar datos por fundo y obtener el más reciente de cada uno
-        const datosPorFundo = {};
-        datos.forEach(d => {
-            if (!datosPorFundo[d.fundo] || new Date(d.fecha) > new Date(datosPorFundo[d.fundo].fecha)) {
-                datosPorFundo[d.fundo] = d;
-            }
-        });
-
-        const datosRecientesPorFundo = Object.values(datosPorFundo);
+        if (!datos || datos.length === 0) return;
         
-        if (datosRecientesPorFundo.length === 0) {
-            this.mostrarEstadoVacio();
+        // Panel 1: Estado del Sistema (KPIs Críticos)
+        const ultimoDia = datos[datos.length - 1];
+        const penultimoDia = datos.length > 1 ? datos[datos.length - 2] : ultimoDia;
+        
+        // Producción total diaria
+        document.getElementById('kpiLecheDiaria').textContent = `${ultimoDia.lecheDiaria.toFixed(0)} L`;
+        this.actualizarTrend('trendLecheDiaria', ultimoDia.lecheDiaria, penultimoDia.lecheDiaria);
+        
+        // Litros por vaca día
+        const litrosPorVaca = ultimoDia.lecheDiaria / ultimoDia.vacasOrdeña;
+        const litrosPorVacaAnterior = penultimoDia.lecheDiaria / penultimoDia.vacasOrdeña;
+        document.getElementById('kpiLitrosVacaDia').textContent = `${litrosPorVaca.toFixed(1)} L`;
+        this.actualizarTrend('trendLitrosVacaDia', litrosPorVaca, litrosPorVacaAnterior);
+        
+        // Vacas en ordeña
+        document.getElementById('kpiVacasOrdeña').textContent = ultimoDia.vacasOrdeña.toFixed(0);
+        this.actualizarTrend('trendVacasOrdeña', ultimoDia.vacasOrdeña, penultimoDia.vacasOrdeña);
+        
+        // Costo dieta / litro
+        document.getElementById('kpiCostoDietaLitro').textContent = `$${ultimoDia.costoDietaLitro.toFixed(3)}`;
+        this.actualizarTrend('trendCostoDietaLitro', ultimoDia.costoDietaLitro, penultimoDia.costoDietaLitro);
+        
+        // % proteína
+        document.getElementById('kpiProteina').textContent = `${ultimoDia.proteina.toFixed(2)}%`;
+        this.actualizarTrend('trendProteina', ultimoDia.proteina, penultimoDia.proteina);
+        
+        // % grasa
+        document.getElementById('kpiGrasa').textContent = `${ultimoDia.grasa.toFixed(2)}%`;
+        this.actualizarTrend('trendGrasa', ultimoDia.grasa, penultimoDia.grasa);
+        
+        // Panel 3: Alimentación
+        // Costo dieta / vaca día
+        const costoDietaVaca = ultimoDia.costoDieta / ultimoDia.vacasOrdeña;
+        const costoDietaVacaAnterior = penultimoDia.costoDieta / penultimoDia.vacasOrdeña;
+        document.getElementById('kpiCostoDietaVaca').textContent = `$${costoDietaVaca.toFixed(2)}`;
+        this.actualizarTrend('trendCostoDietaVaca', costoDietaVaca, costoDietaVacaAnterior);
+        
+        // Costo total diario
+        document.getElementById('kpiCostoTotalDiario').textContent = `$${ultimoDia.costoDieta.toFixed(0)}`;
+        this.actualizarTrend('trendCostoTotalDiario', ultimoDia.costoDieta, penultimoDia.costoDieta);
+        
+        // Panel 4: Calidad de Leche
+        const calidadGeneral = (ultimoDia.proteina + ultimoDia.grasa) / 2;
+        const calidadGeneralAnterior = (penultimoDia.proteina + penultimoDia.grasa) / 2;
+        document.getElementById('kpiCalidadLeche').textContent = `${calidadGeneral.toFixed(2)}%`;
+        this.actualizarTrend('trendCalidadLeche', calidadGeneral, calidadGeneralAnterior);
+        
+        // Panel 5: Económico
+        const precioLeche = 0.8; // Precio estimado por litro
+        const ingresoEstimado = ultimoDia.lecheDiaria * precioLeche;
+        const ingresoEstimadoAnterior = penultimoDia.lecheDiaria * precioLeche;
+        document.getElementById('kpiIngresoEstimado').textContent = `$${ingresoEstimado.toFixed(0)}`;
+        this.actualizarTrend('trendIngresoEstimado', ingresoEstimado, ingresoEstimadoAnterior);
+        
+        const costoAlimentacion = ultimoDia.costoDieta;
+        const costoAlimentacionAnterior = penultimoDia.costoDieta;
+        document.getElementById('kpiCostoAlimentacion').textContent = `$${costoAlimentacion.toFixed(0)}`;
+        this.actualizarTrend('trendCostoAlimentacion', costoAlimentacion, costoAlimentacionAnterior);
+        
+        const margenEstimado = ingresoEstimado - costoAlimentacion;
+        const margenEstimadoAnterior = ingresoEstimadoAnterior - costoAlimentacionAnterior;
+        document.getElementById('kpiMargenEstimado').textContent = `$${margenEstimado.toFixed(0)}`;
+        this.actualizarTrend('trendMargenEstimado', margenEstimado, margenEstimadoAnterior);
+        
+        const costoPorLitro = ultimoDia.costoDietaLitro;
+        const costoPorLitroAnterior = penultimoDia.costoDietaLitro;
+        document.getElementById('kpiCostoPorLitro').textContent = `$${costoPorLitro.toFixed(3)}`;
+        this.actualizarTrend('trendCostoPorLitro', costoPorLitro, costoPorLitroAnterior);
+    }
+
+    /**
+     * Actualizar tendencia de un KPI
+     */
+    actualizarTrend(elementId, valorActual, valorAnterior) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        
+        if (valorAnterior === 0) {
+            element.textContent = '➡️ 0%';
+            element.className = 'kpi-trend neutral';
             return;
         }
-
-        // A) Producción
-        const lecheDiaria = datosRecientesPorFundo.reduce((sum, d) => sum + (d.lecheDiaria || 0), 0);
-        const litrosVacaDia = datosRecientesPorFundo.reduce((sum, d) => sum + (d.litrosVacaDia || 0), 0) / datosRecientesPorFundo.length;
-        const vacasOrdeña = datosRecientesPorFundo.reduce((sum, d) => sum + (d.vacasOrdeña || 0), 0);
         
-        this.actualizarKPI('kpiLecheDiaria', `${lecheDiaria.toFixed(1)} L`);
-        this.actualizarKPI('kpiLitrosVacaDia', `${litrosVacaDia.toFixed(2)} L`);
-        this.actualizarKPI('kpiVacasOrdeña', vacasOrdeña.toString());
-
-        // B) Calidad
-        const proteina = datosRecientesPorFundo.reduce((sum, d) => sum + (d.proteina || 0), 0) / datosRecientesPorFundo.length;
-        const grasa = datosRecientesPorFundo.reduce((sum, d) => sum + (d.grasa || 0), 0) / datosRecientesPorFundo.length;
+        const cambio = ((valorActual - valorAnterior) / valorAnterior) * 100;
+        const absoluto = Math.abs(cambio);
         
-        // C) Alimentación
-        const concentradoDiario = datosRecientesPorFundo.reduce((sum, d) => sum + (d.concentradoDiario || 0), 0);
-        
-        // D) Economía
-        const costoDietaLitro = datosRecientesPorFundo.reduce((sum, d) => sum + (d.costoDietaLitro || 0), 0) / datosRecientesPorFundo.length;
-        const costoAlimentacion = datosRecientesPorFundo.reduce((sum, d) => sum + (d.costoAlimentacion || 0), 0);
-        const ingresoEstimado = datosRecientesPorFundo.reduce((sum, d) => sum + (d.ingresoEstimado || 0), 0);
-        const margenEstimado = datosRecientesPorFundo.reduce((sum, d) => sum + (d.margenEstimado || 0), 0);
-        const stockDiario = datosRecientesPorFundo.reduce((sum, d) => sum + (d.stockDiario || 0), 0);
-        
-        this.actualizarKPI('kpiCostoDietaLitro', `$${costoDietaLitro.toFixed(3)}`);
-        this.actualizarKPI('kpiCostoAlimentacion', `$${costoAlimentacion.toFixed(0)}`);
-        this.actualizarKPI('kpiIngresoEstimado', `$${ingresoEstimado.toFixed(0)}`);
-        this.actualizarKPI('kpiMargenEstimado', `$${margenEstimado.toFixed(0)}`);
-        this.actualizarKPI('kpiStockDiario', `${stockDiario.toFixed(0)} kg`);
-
-        // Calcular tendencias para todas las tarjetas de valor
-        this.calcularTendenciasValor(datosRecientesPorFundo);
-        
-        // Calcular tendencias para tarjetas de producción (vs promedio 7 días)
-        this.calcularTendenciasProduccion(datos);
-
-        // Actualizar stock del último día
-        const registroMasReciente = this.obtenerRegistroMasReciente(datos);
-        if (registroMasReciente) {
-            this.actualizarKPI('kpiStockUltimoDia', `${(registroMasReciente.stockDiario || 0).toFixed(0)} kg`);
-            
-            // Calcular tendencia comparando con el día anterior
-            const stockActual = registroMasReciente.stockDiario || 0;
-            const stockAnterior = this.obtenerStockDiaAnterior(datos, registroMasReciente.fecha);
-            if (stockAnterior !== null) {
-                const tendencia = ((stockActual - stockAnterior) / stockAnterior * 100);
-                this.actualizarTendencia('trendStockUltimoDia', tendencia);
-            }
+        if (absoluto < 0.5) {
+            element.textContent = '➡️ 0%';
+            element.className = 'kpi-trend neutral';
+        } else if (cambio > 0) {
+            element.textContent = `📈 +${cambio.toFixed(1)}%`;
+            element.className = 'kpi-trend positive';
+        } else {
+            element.textContent = `📉 ${cambio.toFixed(1)}%`;
+            element.className = 'kpi-trend negative';
         }
+    }
 
-        // Actualizar valores actuales para gráficos
-        this.actualizarKPI('kpiProduccionDiaria', `${lecheDiaria.toFixed(1)} L`);
-        this.actualizarKPI('kpiVacasOrdeñaEvol', vacasOrdeña.toString());
+    /**
+     * Actualizar tabla de inventario
+     */
+    actualizarTablaInventario(datos) {
+        console.log(`📦 Actualizando tabla de inventario con ${datos.length} datos`);
+        
+        if (!datos || datos.length === 0) {
+            console.warn(`⚠️ No hay datos para actualizar tabla de inventario`);
+            return;
+        }
+        
+        const ultimoDia = datos[datos.length - 1];
+        console.log(`📊 Último día de datos:`, ultimoDia);
+        
+        // Concentrado
+        const stockConcentrado = ultimoDia.stockDiario;
+        const consumoConcentrado = ultimoDia.concentradoDiario;
+        const diasConcentrado = consumoConcentrado > 0 ? stockConcentrado / consumoConcentrado : 0;
+        
+        console.log(`🌾 Concentrado - Stock: ${stockConcentrado}, Consumo: ${consumoConcentrado}, Días: ${diasConcentrado}`);
+        
+        // Ensilaje Maíz
+        const stockEnsilaje = stockConcentrado * 2; // Estimado: 2x el concentrado
+        const consumoEnsilaje = consumoConcentrado * 3; // Estimado: 3x el concentrado
+        const diasEnsilaje = consumoEnsilaje > 0 ? stockEnsilaje / consumoEnsilaje : 0;
+        
+        console.log(`🌽 Ensilaje - Stock: ${stockEnsilaje}, Consumo: ${consumoEnsilaje}, Días: ${diasEnsilaje}`);
+        
+        // Sales y Aditivos
+        const stockSales = stockConcentrado * 0.1; // Estimado: 10% del concentrado
+        const consumoSales = consumoConcentrado * 0.05; // Estimado: 5% del concentrado
+        const diasSales = consumoSales > 0 ? stockSales / consumoSales : 0;
+        
+        console.log(`🧂 Sales - Stock: ${stockSales}, Consumo: ${consumoSales}, Días: ${diasSales}`);
+        
+        // Fibra
+        const stockFibra = stockConcentrado * 1.5; // Estimado: 1.5x el concentrado
+        const consumoFibra = consumoConcentrado * 2; // Estimado: 2x el concentrado
+        const diasFibra = consumoFibra > 0 ? stockFibra / consumoFibra : 0;
+        
+        console.log(`🌾 Fibra - Stock: ${stockFibra}, Consumo: ${consumoFibra}, Días: ${diasFibra}`);
+        
+        // Actualizar tabla HTML
+        this.actualizarHTMLInventario({
+            concentrado: { stock: stockConcentrado, consumo: consumoConcentrado, dias: diasConcentrado },
+            ensilaje: { stock: stockEnsilaje, consumo: consumoEnsilaje, dias: diasEnsilaje },
+            sales: { stock: stockSales, consumo: consumoSales, dias: diasSales },
+            fibra: { stock: stockFibra, consumo: consumoFibra, dias: diasFibra }
+        });
+        
+        console.log(`✅ Tabla de inventario actualizada exitosamente`);
+    }
+
+    /**
+     * Actualizar HTML de la tabla de inventario
+     */
+    actualizarHTMLInventario(datos) {
+        console.log(`🔄 Actualizando HTML de inventario`);
+        
+        // Actualizar Concentrado
+        this.actualizarItemInventario('concentrado', datos.concentrado);
+        
+        // Actualizar Ensilaje Maíz
+        this.actualizarItemInventario('ensilaje', datos.ensilaje);
+        
+        // Actualizar Sales y Aditivos
+        this.actualizarItemInventario('sales', datos.sales);
+        
+        // Actualizar Fibra
+        this.actualizarItemInventario('fibra', datos.fibra);
+        
+        console.log(`✅ HTML de inventario actualizado`);
+    }
+
+    /**
+     * Actualizar item individual de inventario
+     */
+    actualizarItemInventario(item, datos) {
+        console.log(`📝 Actualizando item ${item}:`, datos);
+        
+        // Mapeo de IDs correctos según el HTML
+        const idMap = {
+            'concentrado': 'stockConcentrado',
+            'ensilaje': 'stockEnsilaje', 
+            'sales': 'stockSales',
+            'fibra': 'stockFibra'
+        };
+        
+        const stockId = idMap[item];
+        const consumoId = stockId.replace('stock', 'consumo');
+        const diasId = stockId.replace('stock', 'dias');
+        
+        // Buscar elementos en la tabla
+        const stockElement = document.getElementById(stockId);
+        const consumoElement = document.getElementById(consumoId);
+        const diasElement = document.getElementById(diasId);
+        
+        console.log(`🔍 Elementos encontrados - Stock: ${!!stockElement} (${stockId}), Consumo: ${!!consumoElement} (${consumoId}), Días: ${!!diasElement} (${diasId})`);
+        
+        if (stockElement) {
+            stockElement.textContent = datos.stock.toFixed(0) + ' kg';
+        }
+        
+        if (consumoElement) {
+            consumoElement.textContent = datos.consumo.toFixed(1) + ' kg';
+        }
+        
+        if (diasElement) {
+            diasElement.textContent = datos.dias.toFixed(1) + ' días';
+            this.actualizarEstadoStock(diasElement, datos.dias);
+        }
+    }
+
+    /**
+     * Actualizar estado de stock con indicadores visuales
+     */
+    actualizarEstadoStock(elementId, dias) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        
+        // Eliminar clases anteriores
+        element.classList.remove('stock-normal', 'stock-bajo', 'stock-critico');
+        
+        if (dias >= 14) {
+            element.classList.add('stock-normal');
+        } else if (dias >= 7) {
+            element.classList.add('stock-bajo');
+        } else {
+            element.classList.add('stock-critico');
+        }
+    }
+
+    /**
+     * Actualizar gráficos del dashboard
+     */
+    actualizarGraficos(datos) {
+        console.log(`📈 Iniciando actualización de gráficos con ${datos.length} datos`);
+        
+        // Usar todos los datos del rango de fechas seleccionado (ya filtrados)
+        // En lugar de limitar a últimos 14 días
+        
+        // Lista de todos los gráficos que deberían actualizarse
+        const graficos = [
+            'produccionDiaria',
+            'litrosVacaDiaEvol', 
+            'vacasOrdeñaEvol',
+            'concentradoDiario',
+            'costoDieta',
+            'calidadEvol'
+        ];
+        
+        console.log(`📊 Se intentarán actualizar ${graficos.length} gráficos: ${graficos.join(', ')}`);
+        
+        // Actualizar cada gráfico evolutivo con todos los datos disponibles
+        graficos.forEach((kpiId, index) => {
+            console.log(`🔄 (${index + 1}/${graficos.length}) Actualizando gráfico: ${kpiId}`);
+            try {
+                this.actualizarGraficoKPI(kpiId, datos);
+                console.log(`✅ Gráfico ${kpiId} actualizado exitosamente`);
+            } catch (error) {
+                console.error(`❌ Error al actualizar gráfico ${kpiId}:`, error);
+                console.error(`Stack trace:`, error.stack);
+            }
+        });
+        
+        console.log(`✅ Proceso de actualización de gráficos completado`);
+    }
+
+    /**
+     * Actualizar gráfico KPI específico
+     */
+    actualizarGraficoKPI(kpiId, datos) {
+        console.log(`🔍 INICIO - Actualizando gráfico ${kpiId} con ${datos.length} datos`);
+        
+        const canvas = document.getElementById(`chart${kpiId.charAt(0).toUpperCase() + kpiId.slice(1)}`);
+        if (!canvas) {
+            console.error(`❌ Canvas no encontrado: chart${kpiId.charAt(0).toUpperCase() + kpiId.slice(1)}`);
+            return;
+        }
+        
+        console.log(`✅ Canvas encontrado para ${kpiId}`);
+        console.log(`📏 Dimensiones HTML: ${canvas.width}x${canvas.height}`);
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            console.error(`❌ No se pudo obtener contexto 2D del canvas ${kpiId}`);
+            return;
+        }
+        
+        console.log(`✅ Contexto 2D obtenido para ${kpiId}`);
+        
+        // Test básico: dibujar un rectángulo para verificar que el canvas funciona
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.5)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Test de texto
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 16px Arial';
+        ctx.fillText(`TEST: ${kpiId}`, 10, 30);
+        ctx.fillText(`Datos: ${datos.length}`, 10, 50);
+        
+        // Si hay datos, intentar dibujar el gráfico
+        if (datos && datos.length > 0) {
+            console.log(`📊 Intentando dibujar gráfico con datos reales`);
+            this.configurarGrafico(ctx, canvas, kpiId, datos);
+        } else {
+            console.warn(`⚠️ No hay datos para gráfico ${kpiId}`);
+            ctx.fillStyle = 'yellow';
+            ctx.fillText('SIN DATOS', 10, 70);
+        }
+        
+        console.log(`✅ FIN - Gráfico ${kpiId} procesado`);
+    }
+
+    /**
+     * Configurar gráfico según tipo de KPI
+     */
+    configurarGrafico(ctx, canvas, kpiId, datos) {
+        if (!datos || datos.length === 0) return;
+        
+        // Obtener valores según tipo de KPI
+        let valores = [];
+        let etiquetas = [];
+        
+        switch (kpiId) {
+            case 'produccionDiaria':
+                valores = datos.map(d => d.lecheDiaria || 0);
+                break;
+            case 'litrosVacaDiaEvol':
+                valores = datos.map(d => {
+                    const litros = d.lecheDiaria || 0;
+                    const vacas = d.vacasOrdeña || 1;
+                    return litros / vacas;
+                });
+                break;
+            case 'concentradoDiario':
+                valores = datos.map(d => d.concentradoDiario || 0);
+                break;
+            case 'calidadLeche':
+            case 'calidadEvol':
+                valores = datos.map(d => (d.proteina + d.grasa) / 2 || 0);
+                break;
+            case 'vacasOrdeñaEvol':
+                valores = datos.map(d => d.vacasOrdeña || 0);
+                break;
+            case 'costoDieta':
+                valores = datos.map(d => d.costoDieta || 0);
+                break;
+            case 'stockDiario':
+                valores = datos.map(d => d.stockDiario || 0);
+                break;
+            default:
+                valores = datos.map(d => d[kpiId] || 0);
+        }
+        
+        // Generar etiquetas de fechas
+        etiquetas = datos.map(d => {
+            const fecha = new Date(d.fecha);
+            return `${fecha.getDate()}/${fecha.getMonth() + 1}`;
+        });
+        
+        // Dibujar gráfico de líneas
+        this.dibujarGraficoLineas(ctx, canvas, valores, etiquetas, kpiId);
+    }
+
+    /**
+     * Dibujar gráfico de líneas
+     */
+    dibujarGraficoLineas(ctx, canvas, valores, etiquetas, kpiId) {
+        console.log(`🎨 Dibujando gráfico ${kpiId} con ${valores.length} valores`);
+        
+        const padding = { top: 30, right: 50, bottom: 50, left: 50 };
+        const width = canvas.width - padding.left - padding.right;
+        const height = canvas.height - padding.top - padding.bottom;
+        
+        // Limpiar canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // FONDO TRANSPARENTE - no dibujar fondo de prueba
+        
+        if (valores.length === 0) {
+            console.warn(`⚠️ No hay valores para dibujar gráfico ${kpiId}`);
+            return;
+        }
+        
+        // Encontrar valores min y max - FORZAR MIN = 0
+        const valorMax = Math.max(...valores);
+        const valorMin = 0; // SIEMPRE empezar en 0
+        const rango = valorMax - valorMin || 1;
+        
+        console.log(`📈 Rango de valores: ${valorMin} a ${valorMax} (rango: ${rango})`);
+        
+        // Escala para valores
+        const escalaY = (y) => padding.top + height - ((y - valorMin) / rango) * height;
+        
+        // Escala para fechas
+        const escalaX = (i) => padding.left + (i / (valores.length - 1)) * width;
+        
+        // Dibujar fondo para hacer visible el área
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.fillRect(padding.left, padding.top, width, height);
+        
+        // Dibujar ejes
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, padding.top);
+        ctx.lineTo(padding.left, padding.top + height);
+        ctx.lineTo(padding.left + width, padding.top + height);
+        ctx.stroke();
+        
+        // DIBUJAR LÍNEAS DE GRILLA Y VALORES EN EJE Y
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'right';
+        
+        // Número de líneas de grid (máximo 5)
+        const numLineasGrid = Math.min(5, Math.ceil(valorMax));
+        
+        for (let i = 0; i <= numLineasGrid; i++) {
+            const valor = (valorMax / numLineasGrid) * i;
+            const y = escalaY(valor);
+            
+            // Línea horizontal de grid
+            ctx.beginPath();
+            ctx.moveTo(padding.left, y);
+            ctx.lineTo(padding.left + width, y);
+            ctx.stroke();
+            
+            // Valor en el eje Y
+            ctx.fillText(valor.toFixed(0), padding.left - 5, y + 3);
+        }
+        
+        // DIBUJAR ÁREA BAJO LA CURVA
+        const colorArea = this.getColorPorKPI(kpiId);
+        ctx.fillStyle = colorArea + '20'; // 20% de opacidad para el área
+        ctx.beginPath();
+        
+        // Empezar desde la esquina inferior izquierda
+        ctx.moveTo(padding.left, padding.top + height);
+        
+        // Dibujar la línea de datos
+        valores.forEach((valor, i) => {
+            const x = escalaX(i);
+            const y = escalaY(valor);
+            ctx.lineTo(x, y);
+        });
+        
+        // Cerrar el área volviendo a la base
+        ctx.lineTo(escalaX(valores.length - 1), padding.top + height);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Dibujar línea de datos
+        ctx.strokeStyle = this.getColorPorKPI(kpiId);
+        ctx.lineWidth = 2; // Reducido de 3 a 2 para líneas más suaves
+        ctx.lineCap = 'round'; // Líneas con extremos redondeados
+        ctx.lineJoin = 'round'; // Uniones redondeadas
+        ctx.beginPath();
+        
+        valores.forEach((valor, i) => {
+            const x = escalaX(i);
+            const y = escalaY(valor);
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+        });
+        
+        ctx.stroke();
+        
+        // Dibujar puntos más pequeños
+        ctx.fillStyle = this.getColorPorKPI(kpiId);
+        valores.forEach((valor, i) => {
+            const x = escalaX(i);
+            const y = escalaY(valor);
+            
+            ctx.beginPath();
+            ctx.arc(x, y, 2, 0, Math.PI * 2); // Reducido de 5 a 2px de radio
+            ctx.fill();
+        });
+        
+        // Dibujar etiquetas de fechas en eje X
+        const step = Math.max(1, Math.floor(valores.length / 5));
+        ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        
+        for (let i = 0; i < valores.length; i += step) {
+            const x = escalaX(i);
+            const fecha = etiquetas[i];
+            ctx.fillText(fecha, x, padding.top + height + 20);
+        }
+        
+        // Dibujar título del eje Y
+        ctx.save();
+        ctx.translate(15, padding.top + height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(this.getTituloEjeY(kpiId), 0, 0);
+        ctx.restore();
+        
+        console.log(`✅ Gráfico ${kpiId} dibujado con ejes y valores`);
+    }
+
+    /**
+     * Obtener título para el eje Y según tipo de KPI
+     */
+    getTituloEjeY(kpiId) {
+        const titulos = {
+            'produccionDiaria': 'Litros',
+            'litrosVacaDiaEvol': 'L/Vaca',
+            'vacasOrdeñaEvol': 'Vacas',
+            'concentradoDiario': 'kg',
+            'costoDieta': '$',
+            'calidadEvol': '%'
+        };
+        
+        return titulos[kpiId] || 'Valor';
+    }
+
+    /**
+     * Obtener color según tipo de KPI
+     */
+    getColorPorKPI(kpiId) {
+        const colores = {
+            'produccionDiaria': '#3b82f6',
+            'concentradoDiario': '#10b981',
+            'calidadLeche': '#f59e0b',
+            'calidadEvol': '#f59e0b',
+            'vacasOrdeñaEvol': '#8b5cf6',
+            'costoDieta': '#ef4444',
+            'stockDiario': '#06b6d4'
+        };
+        
+        return colores[kpiId] || '#3b82f6';
     }
 
     /**
@@ -515,18 +999,36 @@ class DashboardModule {
      * Actualizar gráficos del dashboard
      */
     actualizarGraficos(datos) {
+        console.log(`📈 Iniciando actualización de gráficos con ${datos.length} datos`);
+        
         // Usar todos los datos del rango de fechas seleccionado (ya filtrados)
         // En lugar de limitar a últimos 14 días
         
-        // Actualizar cada gráfico evolutivo con todos los datos disponibles
-        this.actualizarGraficoKPI('produccionDiaria', datos);
-        this.actualizarGraficoKPI('concentradoDiario', datos);
-        this.actualizarGraficoKPI('calidadLeche', datos);
-        this.actualizarGraficoKPI('vacasOrdeñaEvol', datos);
-        this.actualizarGraficoKPI('costoDieta', datos);
-        this.actualizarGraficoKPI('stockDiario', datos);
+        // Lista de todos los gráficos que deberían actualizarse
+        const graficos = [
+            'produccionDiaria',
+            'litrosVacaDiaEvol', 
+            'vacasOrdeñaEvol',
+            'concentradoDiario',
+            'costoDieta',
+            'calidadEvol'
+        ];
         
-        console.log(`📈 Gráficos actualizados con ${datos.length} puntos de datos`);
+        console.log(`📊 Se intentarán actualizar ${graficos.length} gráficos: ${graficos.join(', ')}`);
+        
+        // Actualizar cada gráfico evolutivo con todos los datos disponibles
+        graficos.forEach((kpiId, index) => {
+            console.log(`🔄 (${index + 1}/${graficos.length}) Actualizando gráfico: ${kpiId}`);
+            try {
+                this.actualizarGraficoKPI(kpiId, datos);
+                console.log(`✅ Gráfico ${kpiId} actualizado exitosamente`);
+            } catch (error) {
+                console.error(`❌ Error al actualizar gráfico ${kpiId}:`, error);
+                console.error(`Stack trace:`, error.stack);
+            }
+        });
+        
+        console.log(`✅ Proceso de actualización de gráficos completado`);
     }
 
     /**
@@ -540,17 +1042,6 @@ class DashboardModule {
         
         // Obtener últimos 14 días
         return datosOrdenados.slice(-14);
-    }
-
-    /**
-     * Actualizar gráfico KPI específico
-     */
-    actualizarGraficoKPI(kpiId, datos) {
-        const canvasElement = document.getElementById(`chart-kpi-${kpiId}`);
-        if (!canvasElement) return;
-
-        // Dibujar gráfico
-        this.dibujarGraficoLineaKPI(canvasElement, datos, kpiId);
     }
 
     /**
@@ -1255,7 +1746,6 @@ class DashboardModule {
                 const x = padding.left + (i / (datos.length - 1)) * graphWidth;
                 const fecha = new Date(datos[i].fecha);
                 const fechaStr = `${fecha.getDate()}/${fecha.getMonth() + 1}`;
-                console.log(`Fecha ${i}:`, fechaStr, 'en x:', x);
                 
                 // Dibujar rectángulo de fondo para mayor visibilidad
                 const textWidth = ctx.measureText(fechaStr).width;
@@ -1428,90 +1918,190 @@ class DashboardModule {
         
         if (!datos || datos.length === 0) return;
         
-        // Obtener los últimos 7 días para alertas recientes
-        const ultimos7Dias = datos.slice(-7);
-        const diaActual = ultimos7Dias[ultimos7Dias.length - 1];
+        // Ordenar datos por fecha (más antiguo a más reciente)
+        const datosOrdenados = datos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
         
-        // Alerta de producción baja
-        if (diaActual.lecheDiaria < 800) {
-            this.alertas.push({
-                tipo: 'warning',
-                titulo: 'Producción por debajo del objetivo',
-                mensaje: `La producción diaria de ${diaActual.lecheDiaria}L está un ${Math.round((1 - diaActual.lecheDiaria/1000) * 100)}% por debajo del objetivo`,
-                fecha: diaActual.fecha,
-                fundo: diaActual.fundo
-            });
-        }
-        
-        // Alerta de stock crítico
-        if (diaActual.stockDiario < 100) {
-            this.alertas.push({
-                tipo: 'danger',
-                titulo: 'Stock crítico de alimento',
-                mensaje: `Quedan solo ${diaActual.stockDiario}kg de alimento, suficiente para ${Math.round(diaActual.stockDiario/diaActual.concentradoDiario)} días`,
-                fecha: diaActual.fecha,
-                fundo: diaActual.fundo
-            });
-        }
-        
-        // Alerta de calidad baja
-        if (diaActual.proteina < 3.0 || diaActual.grasa < 3.5) {
-            this.alertas.push({
-                tipo: 'warning',
-                titulo: 'Calidad de leche por debajo del estándar',
-                mensaje: `Proteína: ${diaActual.proteina.toFixed(1)}%, Grasa: ${diaActual.grasa.toFixed(1)}% - Valores por debajo del estándar de calidad`,
-                fecha: diaActual.fecha,
-                fundo: diaActual.fundo
-            });
-        }
-        
-        // Alerta de costo elevado
-        if (diaActual.costoDietaLitro > 0.15) {
-            this.alertas.push({
-                tipo: 'info',
-                titulo: 'Costo de dieta elevado',
-                mensaje: `El costo por litro de $${diaActual.costoDietaLitro.toFixed(3)} está por encima del óptimo`,
-                fecha: diaActual.fecha,
-                fundo: diaActual.fundo
-            });
-        }
-        
-        // Alerta de éxito en producción
-        if (diaActual.lecheDiaria > 1200) {
-            this.alertas.push({
-                tipo: 'success',
-                titulo: '¡Excelente producción!',
-                mensaje: `Producción récord de ${diaActual.lecheDiaria}L, superando el objetivo en ${Math.round((diaActual.lecheDiaria/1000 - 1) * 100)}%`,
-                fecha: diaActual.fecha,
-                fundo: diaActual.fundo
-            });
-        }
-        
-        // Alerta de tendencia negativa (comparación con hace 3 días)
-        if (ultimos7Dias.length >= 4) {
-            const hace3Dias = ultimos7Dias[ultimos7Dias.length - 4];
-            const variacion = ((diaActual.lecheDiaria - hace3Dias.lecheDiaria) / hace3Dias.lecheDiaria) * 100;
+        // Generar alertas para cada día (evaluación diaria)
+        for (let i = 7; i < datosOrdenados.length; i++) {
+            const diaActual = datosOrdenados[i];
+            const fechaActual = new Date(diaActual.fecha);
             
-            if (variacion < -10) {
+            // 1. Caída de producción por vaca (>5% respecto al promedio de últimos 7 días)
+            const ultimos7Dias = datosOrdenados.slice(i - 7, i);
+            const promedioUltimos7Dias = ultimos7Dias.reduce((sum, d) => sum + (d.lecheDiaria / d.vacasOrdeña), 0) / 7;
+            const litrosPorVacaHoy = diaActual.lecheDiaria / diaActual.vacasOrdeña;
+            const caidaProduccion = ((promedioUltimos7Dias - litrosPorVacaHoy) / promedioUltimos7Dias) * 100;
+            
+            if (caidaProduccion > 5) {
                 this.alertas.push({
                     tipo: 'warning',
-                    titulo: 'Tendencia de producción negativa',
-                    mensaje: `La producción ha disminuido un ${Math.abs(variacion).toFixed(1)}% en los últimos 3 días`,
+                    titulo: 'Caída de producción por vaca',
+                    mensaje: `Caída del ${caidaProduccion.toFixed(1)}% en producción por vaca. Puede indicar problemas de alimentación, estrés térmico o sanitarios.`,
                     fecha: diaActual.fecha,
-                    fundo: diaActual.fundo
+                    fundo: diaActual.fundo,
+                    indicador: `${litrosPorVacaHoy.toFixed(1)} L/vaca día`,
+                    severidad: caidaProduccion > 15 ? 'high' : caidaProduccion > 10 ? 'medium' : 'low'
+                });
+            }
+            
+            // 2. Aumento del costo de alimentación (>10% respecto al promedio mensual)
+            const diasMesAnterior = [];
+            for (let j = i - 1; j >= Math.max(0, i - 30) && diasMesAnterior.length < 30; j--) {
+                diasMesAnterior.push(datosOrdenados[j]);
+            }
+            if (diasMesAnterior.length > 0) {
+                const promedioMensual = diasMesAnterior.reduce((sum, d) => sum + d.costoDietaLitro, 0) / diasMesAnterior.length;
+                const aumentoCosto = ((diaActual.costoDietaLitro - promedioMensual) / promedioMensual) * 100;
+                
+                if (aumentoCosto > 10) {
+                    this.alertas.push({
+                        tipo: 'danger',
+                        titulo: 'Aumento del costo de alimentación',
+                        mensaje: `Aumento del ${aumentoCosto.toFixed(1)}% en costo por litro. Posibles cambios en formulación o aumento de precios de insumos.`,
+                        fecha: diaActual.fecha,
+                        fundo: diaActual.fundo,
+                        indicador: `$${diaActual.costoDietaLitro.toFixed(3)}/L`,
+                        severidad: aumentoCosto > 25 ? 'high' : aumentoCosto > 15 ? 'medium' : 'low'
+                    });
+                }
+            }
+            
+            // 3. Caída de proteína (<3.1%)
+            if (diaActual.proteina < 3.1) {
+                this.alertas.push({
+                    tipo: 'warning',
+                    titulo: 'Caída de proteína',
+                    mensaje: `Proteína del ${diaActual.proteina.toFixed(2)}% por debajo del umbral crítico. Puede indicar déficit proteico o baja digestibilidad.`,
+                    fecha: diaActual.fecha,
+                    fundo: diaActual.fundo,
+                    indicador: `${diaActual.proteina.toFixed(2)}%`,
+                    severidad: diaActual.proteina < 2.8 ? 'high' : diaActual.proteina < 2.95 ? 'medium' : 'low'
+                });
+            }
+            
+            // 4. Caída de grasa (<3.6%)
+            if (diaActual.grasa < 3.6) {
+                this.alertas.push({
+                    tipo: 'warning',
+                    titulo: 'Caída de grasa',
+                    mensaje: `Grasa del ${diaActual.grasa.toFixed(2)}% por debajo del umbral crítico. Puede indicar déficit de fibra efectiva o exceso de concentrado.`,
+                    fecha: diaActual.fecha,
+                    fundo: diaActual.fundo,
+                    indicador: `${diaActual.grasa.toFixed(2)}%`,
+                    severidad: diaActual.grasa < 3.2 ? 'high' : diaActual.grasa < 3.4 ? 'medium' : 'low'
+                });
+            }
+            
+            // 5. Quiebre de inventario de alimento (<7 días de stock)
+            const diasStock = Math.floor(diaActual.stockDiario / diaActual.concentradoDiario);
+            if (diasStock < 7) {
+                this.alertas.push({
+                    tipo: 'danger',
+                    titulo: 'Quiebre de inventario de alimento',
+                    mensaje: `Solo quedan ${diasStock} días de stock. Riesgo operativo que requiere reposición urgente.`,
+                    fecha: diaActual.fecha,
+                    fundo: diaActual.fundo,
+                    indicador: `${diasStock} días`,
+                    severidad: diasStock < 3 ? 'high' : diasStock < 5 ? 'medium' : 'low'
                 });
             }
         }
         
+        // Ordenar alertas de más nuevo a más antiguo
+        this.alertas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+        
         console.log(`📊 Generadas ${this.alertas.length} alertas`);
+        
+        // Mostrar alertas en el dashboard
+        this.mostrarAlertas();
+    }
+
+    /**
+     * Mostrar logs detallados de alertas en consola
+     */
+    mostrarLogsAlertas() {
+        console.log('\n🚨 ===== ALERTAS GENERADAS PARA RANGO DE FECHAS =====');
+        console.log(`📅 Rango: ${this.fechaInicio} a ${this.fechaFin}`);
+        console.log(`🏭 Fundo: ${this.fundoSeleccionado === 'todos' ? 'Todos los fundos' : this.fundoSeleccionado}`);
+        console.log(`📊 Total alertas: ${this.alertas.length}\n`);
+        
+        if (this.alertas.length === 0) {
+            console.log('✅ No se generaron alertas en el período seleccionado');
+            return;
+        }
+        
+        // Agrupar alertas por tipo
+        const alertasPorTipo = this.alertas.reduce((acc, alerta) => {
+            if (!acc[alerta.tipo]) acc[alerta.tipo] = [];
+            acc[alerta.tipo].push(alerta);
+            return acc;
+        }, {});
+        
+        // Mostrar resumen por tipo
+        console.log('📋 RESUMEN POR TIPO:');
+        Object.entries(alertasPorTipo).forEach(([tipo, alertas]) => {
+            const icono = tipo === 'danger' ? '🚨' : tipo === 'warning' ? '⚠️' : 'ℹ️';
+            console.log(`${icono} ${tipo.toUpperCase()}: ${alertas.length} alertas`);
+        });
+        
+        console.log('\n📝 DETALLE DE ALERTAS (más nuevas primero):');
+        console.log('─'.repeat(80));
+        
+        this.alertas.forEach((alerta, index) => {
+            const icono = alerta.tipo === 'danger' ? '🚨' : alerta.tipo === 'warning' ? '⚠️' : 'ℹ️';
+            const severidad = alerta.severidad ? `[${alerta.severidad.toUpperCase()}]` : '';
+            const fecha = new Date(alerta.fecha).toLocaleDateString('es-CL');
+            
+            console.log(`${index + 1}. ${icono} ${alerta.titulo} ${severidad}`);
+            console.log(`   📊 Indicador: ${alerta.indicador}`);
+            console.log(`   📅 Fecha: ${fecha} | 🏭 Fundo: ${alerta.fundo}`);
+            console.log(`   💬 Mensaje: ${alerta.mensaje}`);
+            console.log('─'.repeat(80));
+        });
+        
+        // Mostrar estadísticas adicionales
+        const alertasHigh = this.alertas.filter(a => a.severidad === 'high').length;
+        const alertasMedium = this.alertas.filter(a => a.severidad === 'medium').length;
+        const alertasLow = this.alertas.filter(a => a.severidad === 'low').length;
+        
+        console.log('\n📈 ESTADÍSTICAS DE SEVERIDAD:');
+        console.log(`🔴 HIGH (críticas): ${alertasHigh}`);
+        console.log(`🟡 MEDIUM (moderadas): ${alertasMedium}`);
+        console.log(`🔵 LOW (leves): ${alertasLow}`);
+        
+        // Mostrar alertas más recientes por fundo
+        const alertasPorFundo = this.alertas.reduce((acc, alerta) => {
+            if (!acc[alerta.fundo]) acc[alerta.fundo] = [];
+            acc[alerta.fundo].push(alerta);
+            return acc;
+        }, {});
+        
+        console.log('\n🏭 ALERTAS RECIENTES POR FUNDO:');
+        Object.entries(alertasPorFundo).forEach(([fundo, alertas]) => {
+            const masReciente = alertas[0]; // Ya están ordenadas por fecha
+            const icono = masReciente.tipo === 'danger' ? '🚨' : '⚠️';
+            const fecha = new Date(masReciente.fecha).toLocaleDateString('es-CL');
+            console.log(`${fundo}: ${icono} ${masReciente.titulo} (${fecha})`);
+        });
+        
+        console.log('\n🚨 ===== FIN DE LOGS DE ALERTAS =====\n');
     }
 
     /**
      * Mostrar alertas en el dashboard
      */
     mostrarAlertas() {
-        const alertsContainer = document.querySelector('.alerts-container');
-        if (!alertsContainer) return;
+        console.log('🔍 Buscando contenedor de alertas...');
+        const alertsContainer = document.getElementById('alertasContainer');
+        console.log('🔍 Contenedor encontrado:', !!alertsContainer);
+        
+        if (!alertsContainer) {
+            console.error('❌ No se encontró el contenedor de alertas #alertasContainer');
+            console.log('🔍 Elementos disponibles:', document.querySelectorAll('[id*="alert"], [class*="alert"]'));
+            return;
+        }
+        
+        console.log(`📊 Mostrando ${this.alertas.length} alertas en el contenedor`);
         
         if (this.alertas.length === 0) {
             alertsContainer.innerHTML = `
@@ -1521,55 +2111,414 @@ class DashboardModule {
                     <p>No hay alertas activas</p>
                 </div>
             `;
+            console.log('✅ Mostrado estado vacío de alertas');
             return;
         }
         
-        const alertsHTML = this.alertas.map(alerta => `
-            <div class="alert-item ${alerta.tipo}">
+        // Renderizar contenedor con filtros y paginación
+        this.renderizarAlertasConFiltros(alertsContainer);
+        
+        console.log('✅ Alertas renderizadas exitosamente en el contenedor');
+    }
+
+    /**
+     * Renderizar alertas con sistema de filtrado y paginación
+     */
+    renderizarAlertasConFiltros(container) {
+        // Estado del filtrado
+        this.alertasFiltroEstado = {
+            tipo: 'todos',
+            severidad: 'todos',
+            fundo: 'todos',
+            pagina: 1,
+            alertasPorPagina: 5
+        };
+        
+        // Renderizar estructura completa
+        container.innerHTML = `
+            <h3>🔔 Alertas</h3>
+            <div class="alerts-filters">
+                <div class="filter-row">
+                    <select id="alertTipoFilter" class="filter-select">
+                        <option value="todos">Todos los tipos</option>
+                        <option value="danger">🚨 Peligro</option>
+                        <option value="warning">⚠️ Advertencia</option>
+                        <option value="info">ℹ️ Información</option>
+                        <option value="success">✅ Éxito</option>
+                    </select>
+                    
+                    <select id="alertSeveridadFilter" class="filter-select">
+                        <option value="todos">Todas las severidades</option>
+                        <option value="high">🔴 Críticas</option>
+                        <option value="medium">🟡 Moderadas</option>
+                        <option value="low">🔵 Leves</option>
+                    </select>
+                    
+                    <select id="alertFundoFilter" class="filter-select">
+                        <option value="todos">Todos los fundos</option>
+                        <option value="Dollinco">Dollinco</option>
+                        <option value="Pitriuco">Pitriuco</option>
+                    </select>
+                </div>
+                
+                <div class="filter-stats">
+                    <span id="alertCount">0 alertas</span>
+                    <button id="clearFilters" class="btn-clear-filters">Limpiar filtros</button>
+                </div>
+            </div>
+            
+            <div id="alertsList" class="alerts-list">
+                <!-- Las alertas se cargarán dinámicamente -->
+            </div>
+            
+            <div id="alertsPagination" class="alerts-pagination">
+                <!-- Paginación se cargará dinámicamente -->
+            </div>
+        `;
+        
+        // Configurar eventos de filtrado
+        this.configurarEventosFiltros();
+        
+        // Aplicar filtros iniciales
+        this.aplicarFiltrosAlertas();
+    }
+
+    /**
+     * Configurar eventos de filtrado
+     */
+    configurarEventosFiltros() {
+        const tipoFilter = document.getElementById('alertTipoFilter');
+        const severidadFilter = document.getElementById('alertSeveridadFilter');
+        const fundoFilter = document.getElementById('alertFundoFilter');
+        const clearFilters = document.getElementById('clearFilters');
+        
+        if (tipoFilter) {
+            tipoFilter.addEventListener('change', () => {
+                this.alertasFiltroEstado.tipo = tipoFilter.value;
+                this.alertasFiltroEstado.pagina = 1;
+                this.aplicarFiltrosAlertas();
+            });
+        }
+        
+        if (severidadFilter) {
+            severidadFilter.addEventListener('change', () => {
+                this.alertasFiltroEstado.severidad = severidadFilter.value;
+                this.alertasFiltroEstado.pagina = 1;
+                this.aplicarFiltrosAlertas();
+            });
+        }
+        
+        if (fundoFilter) {
+            fundoFilter.addEventListener('change', () => {
+                this.alertasFiltroEstado.fundo = fundoFilter.value;
+                this.alertasFiltroEstado.pagina = 1;
+                this.aplicarFiltrosAlertas();
+            });
+        }
+        
+        if (clearFilters) {
+            clearFilters.addEventListener('click', () => {
+                this.limpiarFiltrosAlertas();
+            });
+        }
+    }
+
+    /**
+     * Aplicar filtros a las alertas
+     */
+    aplicarFiltrosAlertas() {
+        let alertasFiltradas = [...this.alertas];
+        
+        // Filtrar por tipo
+        if (this.alertasFiltroEstado.tipo !== 'todos') {
+            alertasFiltradas = alertasFiltradas.filter(a => a.tipo === this.alertasFiltroEstado.tipo);
+        }
+        
+        // Filtrar por severidad
+        if (this.alertasFiltroEstado.severidad !== 'todos') {
+            alertasFiltradas = alertasFiltradas.filter(a => a.severidad === this.alertasFiltroEstado.severidad);
+        }
+        
+        // Filtrar por fundo
+        if (this.alertasFiltroEstado.fundo !== 'todos') {
+            alertasFiltradas = alertasFiltradas.filter(a => a.fundo === this.alertasFiltroEstado.fundo);
+        }
+        
+        // Actualizar contador
+        this.actualizarContadorAlertas(alertasFiltradas.length);
+        
+        // Aplicar paginación
+        this.renderizarAlertasPaginadas(alertasFiltradas);
+    }
+
+    /**
+     * Renderizar alertas con paginación
+     */
+    renderizarAlertasPaginadas(alertas) {
+        const alertsList = document.getElementById('alertsList');
+        const pagination = document.getElementById('alertsPagination');
+        
+        if (!alertsList || !pagination) return;
+        
+        const totalAlertas = alertas.length;
+        const { pagina, alertasPorPagina } = this.alertasFiltroEstado;
+        
+        // Calcular paginación
+        const totalPages = Math.ceil(totalAlertas / alertasPorPagina);
+        const startIndex = (pagina - 1) * alertasPorPagina;
+        const endIndex = startIndex + alertasPorPagina;
+        const alertasPagina = alertas.slice(startIndex, endIndex);
+        
+        // Renderizar alertas de la página actual
+        if (alertasPagina.length === 0) {
+            alertsList.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔍</div>
+                    <p>No hay alertas con los filtros seleccionados</p>
+                </div>
+            `;
+        } else {
+            const alertsHTML = alertasPagina.map(alerta => this.renderizarAlertaHTML(alerta)).join('');
+            alertsList.innerHTML = alertsHTML;
+        }
+        
+        // Renderizar paginación
+        this.renderizarPaginacion(totalPages, totalAlertas);
+    }
+
+    /**
+     * Renderizar HTML de una alerta individual
+     */
+    renderizarAlertaHTML(alerta) {
+        // Determinar icono según tipo y severidad
+        let icono = '';
+        if (alerta.tipo === 'danger') {
+            icono = alerta.severidad === 'high' ? '🚨' : '⚠️';
+        } else if (alerta.tipo === 'warning') {
+            icono = alerta.severidad === 'high' ? '⚠️' : '⚡';
+        } else if (alerta.tipo === 'success') {
+            icono = '✅';
+        } else if (alerta.tipo === 'info') {
+            icono = 'ℹ️';
+        }
+        
+        // Clase de severidad para estilos adicionales
+        const severidadClass = alerta.severidad ? `severity-${alerta.severidad}` : '';
+        
+        return `
+            <div class="alert-item ${alerta.tipo} ${severidadClass}">
                 <div class="alert-icon">
-                    ${alerta.tipo === 'danger' ? '🚨' : 
-                      alerta.tipo === 'warning' ? '⚠️' : 
-                      alerta.tipo === 'success' ? '✅' : 'ℹ️'}
+                    ${icono}
                 </div>
                 <div class="alert-content">
-                    <h4>${alerta.titulo}</h4>
+                    <div class="alert-header">
+                        <h4>${alerta.titulo}</h4>
+                        <div class="alert-indicator">${alerta.indicador}</div>
+                    </div>
                     <p>${alerta.mensaje}</p>
                     <div class="alert-meta">
                         ${alerta.fundo} • ${new Date(alerta.fecha).toLocaleDateString('es-CL')}
                     </div>
                 </div>
             </div>
-        `).join('');
-        
-        alertsContainer.innerHTML = `
-            <h3>🔔 Alertas</h3>
-            <div class="alerts-list">
-                ${alertsHTML}
-            </div>
         `;
     }
 
     /**
-     * Inicializar selector de fechas con el rango completo de datos
+     * Renderizar controles de paginación
+     */
+    renderizarPaginacion(totalPages, totalAlertas) {
+        const pagination = document.getElementById('alertsPagination');
+        if (!pagination) return;
+        
+        const { pagina, alertasPorPagina } = this.alertasFiltroEstado;
+        
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+        
+        let paginationHTML = '<div class="pagination-controls">';
+        
+        // Botón anterior
+        paginationHTML += `
+            <button class="pagination-btn ${pagina === 1 ? 'disabled' : ''}" 
+                    onclick="window.plataforma.modules.dashboard.irAPagina(${pagina - 1})"
+                    ${pagina === 1 ? 'disabled' : ''}>
+                ← Anterior
+            </button>
+        `;
+        
+        // Números de página
+        const maxPagesToShow = 5;
+        let startPage = Math.max(1, pagina - Math.floor(maxPagesToShow / 2));
+        let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+        
+        if (endPage - startPage + 1 < maxPagesToShow) {
+            startPage = Math.max(1, endPage - maxPagesToShow + 1);
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHTML += `
+                <button class="pagination-btn ${i === pagina ? 'active' : ''}" 
+                        onclick="window.plataforma.modules.dashboard.irAPagina(${i})">
+                    ${i}
+                </button>
+            `;
+        }
+        
+        // Botón siguiente
+        paginationHTML += `
+            <button class="pagination-btn ${pagina === totalPages ? 'disabled' : ''}" 
+                    onclick="window.plataforma.modules.dashboard.irAPagina(${pagina + 1})"
+                    ${pagina === totalPages ? 'disabled' : ''}>
+                Siguiente →
+            </button>
+        `;
+        
+        paginationHTML += '</div>';
+        
+        // Información de paginación
+        paginationHTML += `
+            <div class="pagination-info">
+                Mostrando ${((pagina - 1) * alertasPorPagina) + 1}-${Math.min(pagina * alertasPorPagina, totalAlertas)} 
+                de ${totalAlertas} alertas
+            </div>
+        `;
+        
+        pagination.innerHTML = paginationHTML;
+    }
+
+    /**
+     * Navegar a página específica
+     */
+    irAPagina(pagina) {
+        this.alertasFiltroEstado.pagina = pagina;
+        this.aplicarFiltrosAlertas();
+    }
+
+    /**
+     * Actualizar contador de alertas
+     */
+    actualizarContadorAlertas(count) {
+        const countElement = document.getElementById('alertCount');
+        if (countElement) {
+            countElement.textContent = `${count} alerta${count !== 1 ? 's' : ''}`;
+        }
+    }
+
+    /**
+     * Limpiar todos los filtros
+     */
+    limpiarFiltrosAlertas() {
+        // Resetear estado
+        this.alertasFiltroEstado = {
+            tipo: 'todos',
+            severidad: 'todos',
+            fundo: 'todos',
+            pagina: 1,
+            alertasPorPagina: 5
+        };
+        
+        // Resetear selects
+        const tipoFilter = document.getElementById('alertTipoFilter');
+        const severidadFilter = document.getElementById('alertSeveridadFilter');
+        const fundoFilter = document.getElementById('alertFundoFilter');
+        
+        if (tipoFilter) tipoFilter.value = 'todos';
+        if (severidadFilter) severidadFilter.value = 'todos';
+        if (fundoFilter) fundoFilter.value = 'todos';
+        
+        // Aplicar filtros
+        this.aplicarFiltrosAlertas();
+    }
+
+    /**
+     * Inicializar selector de fechas con el rango por defecto
      */
     inicializarSelectorFechas() {
         if (!this.datosOriginales || this.datosOriginales.length === 0) return;
         
-        const fechaInicio = new Date(this.datosOriginales[0].fecha);
-        const fechaFin = new Date(this.datosOriginales[this.datosOriginales.length - 1].fecha);
-        
+        // Establecer rango por defecto: 1/1/26 hasta 28/2/26
         const inputInicio = document.getElementById('fechaInicio');
         const inputFin = document.getElementById('fechaFin');
         
         if (inputInicio && inputFin) {
-            inputInicio.value = fechaInicio.toISOString().split('T')[0];
-            inputFin.value = fechaFin.toISOString().split('T')[0];
+            // Rango por defecto solicitado
+            inputInicio.value = '2026-01-01';
+            inputFin.value = '2026-02-28';
             
             this.fechaInicio = inputInicio.value;
             this.fechaFin = inputFin.value;
             
-            console.log(`📅 Selector de fechas inicializado: ${this.fechaInicio} a ${this.fechaFin}`);
+            console.log(`📅 Selector de fechas inicializado con rango por defecto: ${this.fechaInicio} a ${this.fechaFin}`);
         }
+    }
+
+    /**
+     * Toggle para mostrar/ocultar controles de fecha
+     */
+    toggleFechas() {
+        const fechaControls = document.getElementById('fechaControls');
+        if (fechaControls) {
+            const isVisible = fechaControls.style.display !== 'none';
+            fechaControls.style.display = isVisible ? 'none' : 'block';
+        }
+    }
+
+    /**
+     * Establecer rango de fechas predefinido
+     */
+    setRangoFechas(tipo) {
+        const inputInicio = document.getElementById('fechaInicio');
+        const inputFin = document.getElementById('fechaFin');
+        
+        if (!inputInicio || !inputFin) return;
+        
+        const hoy = new Date();
+        let fechaInicio, fechaFin;
+        
+        switch (tipo) {
+            case 'ultimoMes':
+                // Último mes: desde hace 1 mes hasta hoy
+                fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - 1, hoy.getDate());
+                fechaFin = new Date();
+                break;
+                
+            case 'ultimos3Meses':
+                // Últimos 3 meses: desde hace 3 meses hasta hoy
+                fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - 3, hoy.getDate());
+                fechaFin = new Date();
+                break;
+                
+            case 'ultimos12Meses':
+                // Últimos 12 meses: desde hace 12 meses hasta hoy
+                fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - 12, hoy.getDate());
+                fechaFin = new Date();
+                break;
+                
+            case 'ultimos24Meses':
+                // Últimos 24 meses: desde hace 24 meses hasta hoy
+                fechaInicio = new Date(hoy.getFullYear(), hoy.getMonth() - 24, hoy.getDate());
+                fechaFin = new Date();
+                break;
+                
+            default:
+                return;
+        }
+        
+        // Formatear fechas a YYYY-MM-DD
+        inputInicio.value = fechaInicio.toISOString().split('T')[0];
+        inputFin.value = fechaFin.toISOString().split('T')[0];
+        
+        // Actualizar estado y filtrar
+        this.fechaInicio = inputInicio.value;
+        this.fechaFin = inputFin.value;
+        
+        console.log(`📅 Rango de fechas establecido (${tipo}): ${this.fechaInicio} a ${this.fechaFin}`);
+        
+        // Aplicar filtros
+        this.filtrarPorFechas();
     }
 
     /**
