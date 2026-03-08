@@ -167,6 +167,8 @@ div {
     font-size: var(--font-size-2xl);
     font-weight: 700;
     color: var(--gray-900);
+    margin: 0;
+    letter-spacing: -0.3px;
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -184,11 +186,14 @@ div {
     border: none;
     background: transparent;
     color: var(--gray-600);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
+    font-size: var(--font-size-base);
+    font-weight: 600;
     border-radius: var(--border-radius);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-normal);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
     white-space: nowrap;
 }
 
@@ -650,7 +655,8 @@ main {
     }
     
     .nav-btn {
-        font-size: var(--font-size-xs);
+        font-size: var(--font-size-sm);
+        font-weight: 600;
         padding: var(--spacing-xs) var(--spacing-sm);
     }
     

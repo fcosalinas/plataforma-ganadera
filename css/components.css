@@ -195,9 +195,13 @@
     border: 1px solid var(--border-dark);
     border-radius: var(--border-radius);
     padding: var(--spacing-sm);
-    transition: all var(--transition-normal);
-    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     overflow: hidden;
+    position: relative;
 }
 
 .kpi-card.valor::before {
@@ -206,8 +210,8 @@
     top: 0;
     left: 0;
     right: 0;
-    height: 2px;
-    background: var(--gradient-primary);
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
     opacity: 0;
     transition: opacity var(--transition-normal);
 }
@@ -221,7 +225,6 @@
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
     border-color: var(--primary-color);
-    background: var(--bg-valor-hover);
 }
 
 /* Estados de trend para tarjetas VALOR */
@@ -265,13 +268,19 @@
     display: flex;
     flex-direction: column;
     gap: var(--spacing-xs);
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    width: 100% !important;
 }
 
 .kpi-card.valor .kpi-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
     margin-bottom: var(--spacing-xs);
+    text-align: center !important;
+    width: 100% !important;
 }
 
 .kpi-card.valor .kpi-title {
@@ -280,29 +289,39 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    text-align: center !important;
     flex: 1;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .kpi-card.valor .kpi-value {
     color: var(--text-primary);
     font-size: var(--font-size-4xl);
     font-weight: 700;
-    line-height: 1;
-    margin-bottom: var(--spacing-xs);
+    text-align: center !important;
+    margin: 0 auto var(--spacing-xs) auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: var(--spacing-xs);
+    width: 100% !important;
 }
 
 .kpi-card.valor .kpi-trend {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--spacing-xs);
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
     font-size: var(--font-size-xs);
     font-weight: 600;
-    padding: var(--spacing-xs) var(--spacing-sm);
-    border-radius: var(--border-radius);
+    padding: 2px 8px;
+    border-radius: var(--border-radius-sm);
+    margin: 0 auto !important;
     transition: all var(--transition-fast);
-    align-self: center;
+    align-self: center !important;
     margin-top: var(--spacing-xs);
+    width: auto !important;
 }
 
 /* Tipo EVOLUTIVO - Tarjeta con gráfico de línea */
@@ -482,8 +501,8 @@
 }
 
 .kpi-trend.neutral {
-color: var(--text-muted);
-background: rgba(128, 128, 128, 0.2);
+    color: var(--text-muted);
+    background: rgba(128, 128, 128, 0.2);
 }
 
 /* Gráficos en tarjetas evolutivas */
