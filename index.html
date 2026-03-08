@@ -148,7 +148,7 @@
                                             <div class="kpi-title">� Producción Diaria</div>
                                         </div>
                                         <div class="kpi-chart">
-                                            <canvas id="chartProduccionDiaria" width="300" height="120"></canvas>
+                                            <canvas id="chartProduccionDiaria" width="600" height="250"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -159,7 +159,7 @@
                                             <div class="kpi-title">🐄 Litros/Vaca Día</div>
                                         </div>
                                         <div class="kpi-chart">
-                                            <canvas id="chartLitrosVacaDiaEvol" width="300" height="120"></canvas>
+                                            <canvas id="chartLitrosVacaDiaEvol" width="600" height="250"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -170,7 +170,7 @@
                                             <div class="kpi-title">🐮 Evolución Vacas Ordeña</div>
                                         </div>
                                         <div class="kpi-chart">
-                                            <canvas id="chartVacasOrdeñaEvol" width="300" height="120"></canvas>
+                                            <canvas id="chartVacasOrdeñaEvol" width="600" height="250"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -208,7 +208,7 @@
                                             <div class="kpi-title">🌾 Consumo Concentrado</div>
                                         </div>
                                         <div class="kpi-chart">
-                                            <canvas id="chartConcentradoDiario" width="300" height="120"></canvas>
+                                            <canvas id="chartConcentradoDiario" width="600" height="250"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -219,7 +219,7 @@
                                             <div class="kpi-title">� Costo Dieta en Tiempo</div>
                                         </div>
                                         <div class="kpi-chart">
-                                            <canvas id="chartCostoDieta" width="300" height="120"></canvas>
+                                            <canvas id="chartCostoDieta" width="600" height="250"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -247,7 +247,7 @@
                                             <div class="kpi-title">📊 Evolución Sólidos</div>
                                         </div>
                                         <div class="kpi-chart">
-                                            <canvas id="chartCalidadEvol" width="300" height="120"></canvas>
+                                            <canvas id="chartCalidadEvol" width="600" height="250"></canvas>
                                         </div>
                                     </div>
                                 </div>
@@ -305,43 +305,124 @@
                         <div class="panel-section">
                             <h2 class="panel-title">📦 Inventario de Alimentación</h2>
                             <div class="panel-subtitle">Control de stock y días disponibles</div>
-                            <div class="inventario-table">
-                                <table class="inventory-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Insumo</th>
-                                            <th>Stock Actual</th>
-                                            <th>Consumo Diario</th>
-                                            <th>Días de Stock</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="inventoryTableBody">
-                                        <tr>
-                                            <td>🌾 Concentrado</td>
-                                            <td id="stockConcentrado">0 kg</td>
-                                            <td id="consumoConcentrado">0 kg</td>
-                                            <td id="diasConcentrado">0 días</td>
-                                        </tr>
-                                        <tr>
-                                            <td>🌽 Ensilaje Maíz</td>
-                                            <td id="stockEnsilaje">0 kg</td>
-                                            <td id="consumoEnsilaje">0 kg</td>
-                                            <td id="diasEnsilaje">0 días</td>
-                                        </tr>
-                                        <tr>
-                                            <td>🧂 Sales y Aditivos</td>
-                                            <td id="stockSales">0 kg</td>
-                                            <td id="consumoSales">0 kg</td>
-                                            <td id="diasSales">0 días</td>
-                                        </tr>
-                                        <tr>
-                                            <td>🌿 Fibra</td>
-                                            <td id="stockFibra">0 kg</td>
-                                            <td id="consumoFibra">0 kg</td>
-                                            <td id="diasFibra">0 días</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <div class="inventario-moderno">
+                                <div class="inventory-grid">
+                                    <!-- Concentrado -->
+                                    <div class="inventory-item" data-item="concentrado">
+                                        <div class="item-header">
+                                            <div class="item-icon">🌾</div>
+                                            <div class="item-title">Concentrado</div>
+                                            <div class="item-status status-critical" id="statusConcentrado">🔴 Crítico</div>
+                                        </div>
+                                        <div class="item-metrics">
+                                            <div class="metric">
+                                                <div class="metric-label">Stock Actual</div>
+                                                <div class="metric-value" id="stockConcentrado">0 kg</div>
+                                            </div>
+                                            <div class="metric">
+                                                <div class="metric-label">Consumo Diario</div>
+                                                <div class="metric-value" id="consumoConcentrado">0 kg</div>
+                                            </div>
+                                            <div class="metric">
+                                                <div class="metric-label">Días Disponibles</div>
+                                                <div class="metric-value metric-highlight" id="diasConcentrado">0 días</div>
+                                            </div>
+                                        </div>
+                                        <div class="item-progress">
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" id="progressConcentrado" style="width: 0%"></div>
+                                            </div>
+                                            <div class="progress-label">Nivel de Stock</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Ensilaje Maíz -->
+                                    <div class="inventory-item" data-item="ensilaje">
+                                        <div class="item-header">
+                                            <div class="item-icon">🌽</div>
+                                            <div class="item-title">Ensilaje Maíz</div>
+                                            <div class="item-status status-critical" id="statusEnsilaje">🔴 Crítico</div>
+                                        </div>
+                                        <div class="item-metrics">
+                                            <div class="metric">
+                                                <div class="metric-label">Stock Actual</div>
+                                                <div class="metric-value" id="stockEnsilaje">0 kg</div>
+                                            </div>
+                                            <div class="metric">
+                                                <div class="metric-label">Consumo Diario</div>
+                                                <div class="metric-value" id="consumoEnsilaje">0 kg</div>
+                                            </div>
+                                            <div class="metric">
+                                                <div class="metric-label">Días Disponibles</div>
+                                                <div class="metric-value metric-highlight" id="diasEnsilaje">0 días</div>
+                                            </div>
+                                        </div>
+                                        <div class="item-progress">
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" id="progressEnsilaje" style="width: 0%"></div>
+                                            </div>
+                                            <div class="progress-label">Nivel de Stock</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Sales y Aditivos -->
+                                    <div class="inventory-item" data-item="sales">
+                                        <div class="item-header">
+                                            <div class="item-icon">🧂</div>
+                                            <div class="item-title">Sales y Aditivos</div>
+                                            <div class="item-status status-medium" id="statusSales">🟡 Medio</div>
+                                        </div>
+                                        <div class="item-metrics">
+                                            <div class="metric">
+                                                <div class="metric-label">Stock Actual</div>
+                                                <div class="metric-value" id="stockSales">0 kg</div>
+                                            </div>
+                                            <div class="metric">
+                                                <div class="metric-label">Consumo Diario</div>
+                                                <div class="metric-value" id="consumoSales">0 kg</div>
+                                            </div>
+                                            <div class="metric">
+                                                <div class="metric-label">Días Disponibles</div>
+                                                <div class="metric-value metric-highlight" id="diasSales">0 días</div>
+                                            </div>
+                                        </div>
+                                        <div class="item-progress">
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" id="progressSales" style="width: 0%"></div>
+                                            </div>
+                                            <div class="progress-label">Nivel de Stock</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Fibra -->
+                                    <div class="inventory-item" data-item="fibra">
+                                        <div class="item-header">
+                                            <div class="item-icon">🌿</div>
+                                            <div class="item-title">Fibra</div>
+                                            <div class="item-status status-critical" id="statusFibra">🔴 Crítico</div>
+                                        </div>
+                                        <div class="item-metrics">
+                                            <div class="metric">
+                                                <div class="metric-label">Stock Actual</div>
+                                                <div class="metric-value" id="stockFibra">0 kg</div>
+                                            </div>
+                                            <div class="metric">
+                                                <div class="metric-label">Consumo Diario</div>
+                                                <div class="metric-value" id="consumoFibra">0 kg</div>
+                                            </div>
+                                            <div class="metric">
+                                                <div class="metric-label">Días Disponibles</div>
+                                                <div class="metric-value metric-highlight" id="diasFibra">0 días</div>
+                                            </div>
+                                        </div>
+                                        <div class="item-progress">
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" id="progressFibra" style="width: 0%"></div>
+                                            </div>
+                                            <div class="progress-label">Nivel de Stock</div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

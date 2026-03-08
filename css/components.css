@@ -2285,21 +2285,242 @@ background: rgba(128, 128, 128, 0.2);
     border-collapse: collapse;
 }
 
-/* Responsive para paneles */
+/* Inventario Moderno - Diseño de Tarjetas */
+.inventario-moderno {
+    width: 100%;
+    margin-top: var(--spacing-md);
+}
+
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+    width: 100%;
+}
+
+.inventory-item {
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-hover) 100%);
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    border: 1px solid var(--border-dark);
+    box-shadow: var(--shadow);
+    transition: all var(--transition-normal);
+    position: relative;
+    overflow: hidden;
+}
+
+.inventory-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.inventory-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--primary-color);
+}
+
+.inventory-item:hover::before {
+    opacity: 1;
+}
+
+.item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.item-icon {
+    font-size: 24px;
+    margin-right: var(--spacing-sm);
+}
+
+.item-title {
+    flex: 1;
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.item-status {
+    padding: 4px 8px;
+    border-radius: var(--border-radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+    text-align: center;
+    min-width: 60px;
+}
+
+.status-critical {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.status-medium {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.status-good {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.item-metrics {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+}
+
+.metric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-xs) 0;
+}
+
+.metric-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.metric-value {
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.metric-highlight {
+    color: var(--primary-color);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+}
+
+.item-progress {
+    margin-top: var(--spacing-md);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--bg-section);
+    border-radius: var(--border-radius-full);
+    overflow: hidden;
+    margin-bottom: var(--spacing-xs);
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    border-radius: var(--border-radius-full);
+    transition: width var(--transition-slow);
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-fill.critical {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.progress-fill.medium {
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+}
+
+.progress-fill.good {
+    background: linear-gradient(90deg, #10b981, #059669);
+}
+
+.progress-label {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Responsive para Inventario Moderno */
 @media (max-width: 1200px) {
-    .panel-section:nth-of-type(1) .kpis-grid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-    
-    .panel-section:nth-of-type(3) .kpis-grid,
-    .panel-section:nth-of-type(5) .kpis-grid {
+    .inventory-grid {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
 @media (max-width: 768px) {
-    .panel-section .kpis-grid {
-        grid-template-columns: 1fr !important;
+    .inventory-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+    }
+    
+    .inventory-item {
+        padding: var(--spacing-md);
+    }
+    
+    .item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .item-status {
+        align-self: flex-end;
+    }
+    
+    .metric {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    
+    .metric-value {
+        align-self: flex-end;
+    }
+}
+
+@media (max-width: 480px) {
+    .inventory-item {
+        padding: var(--spacing-sm);
+    }
+    
+    .item-icon {
+        font-size: 20px;
+    }
+    
+    .item-title {
+        font-size: var(--font-size-base);
+    }
+    
+    .metric-highlight {
+        font-size: var(--font-size-base);
     }
 }
 

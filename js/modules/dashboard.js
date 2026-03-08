@@ -359,13 +359,17 @@ class DashboardModule {
         const stockId = idMap[item];
         const consumoId = stockId.replace('stock', 'consumo');
         const diasId = stockId.replace('stock', 'dias');
+        const statusId = stockId.replace('stock', 'status');
+        const progressId = stockId.replace('stock', 'progress');
         
-        // Buscar elementos en la tabla
+        // Buscar elementos en la tarjeta
         const stockElement = document.getElementById(stockId);
         const consumoElement = document.getElementById(consumoId);
         const diasElement = document.getElementById(diasId);
+        const statusElement = document.getElementById(statusId);
+        const progressElement = document.getElementById(progressId);
         
-        console.log(`🔍 Elementos encontrados - Stock: ${!!stockElement} (${stockId}), Consumo: ${!!consumoElement} (${consumoId}), Días: ${!!diasElement} (${diasId})`);
+        console.log(`🔍 Elementos encontrados - Stock: ${!!stockElement}, Consumo: ${!!consumoElement}, Días: ${!!diasElement}, Status: ${!!statusElement}, Progress: ${!!progressElement}`);
         
         if (stockElement) {
             stockElement.textContent = datos.stock.toFixed(0) + ' kg';
@@ -377,7 +381,56 @@ class DashboardModule {
         
         if (diasElement) {
             diasElement.textContent = datos.dias.toFixed(1) + ' días';
-            this.actualizarEstadoStock(diasElement, datos.dias);
+        }
+        
+        // Actualizar estado visual
+        if (statusElement) {
+            this.actualizarEstadoVisual(statusElement, datos.dias);
+        }
+        
+        // Actualizar barra de progreso
+        if (progressElement) {
+            this.actualizarBarraProgreso(progressElement, datos.dias);
+        }
+    }
+
+    /**
+     * Actualizar estado visual con indicadores modernos
+     */
+    actualizarEstadoVisual(element, dias) {
+        // Remover todas las clases de estado
+        element.className = 'item-status';
+        
+        if (dias < 7) {
+            element.classList.add('status-critical');
+            element.textContent = '🔴 Crítico';
+        } else if (dias < 14) {
+            element.classList.add('status-medium');
+            element.textContent = '🟡 Medio';
+        } else {
+            element.classList.add('status-good');
+            element.textContent = '🟢 Bueno';
+        }
+    }
+
+    /**
+     * Actualizar barra de progreso visual
+     */
+    actualizarBarraProgreso(element, dias) {
+        // Remover todas las clases de progreso
+        element.className = 'progress-fill';
+        
+        // Calcular porcentaje (máximo 30 días = 100%)
+        const porcentaje = Math.min((dias / 30) * 100, 100);
+        element.style.width = porcentaje + '%';
+        
+        // Agregar clase según estado
+        if (dias < 7) {
+            element.classList.add('critical');
+        } else if (dias < 14) {
+            element.classList.add('medium');
+        } else {
+            element.classList.add('good');
         }
     }
 
@@ -676,7 +729,198 @@ class DashboardModule {
         ctx.fillText(this.getTituloEjeY(kpiId), 0, 0);
         ctx.restore();
         
-        console.log(`✅ Gráfico ${kpiId} dibujado con ejes y valores`);
+        // GUARDAR DATOS PARA TOOLTIPS
+        this.guardarDatosTooltip(canvas, kpiId, valores, etiquetas, escalaX, escalaY, padding);
+        
+        console.log(`✅ Gráfico ${kpiId} dibujado con ejes, valores y datos para tooltips`);
+    }
+
+    /**
+     * Guardar datos para tooltips
+     */
+    guardarDatosTooltip(canvas, kpiId, valores, etiquetas, escalaX, escalaY, padding) {
+        // Guardar datos de puntos para detección de hover
+        const puntos = valores.map((valor, i) => ({
+            x: escalaX(i),
+            y: escalaY(valor),
+            valor: valor,
+            etiqueta: etiquetas[i],
+            index: i
+        }));
+        
+        // Guardar en el canvas para acceso posterior
+        canvas.dataset.tooltipData = JSON.stringify({
+            kpiId: kpiId,
+            puntos: puntos,
+            titulo: this.getTituloKPI(kpiId),
+            unidad: this.getTituloEjeY(kpiId)
+        });
+        
+        // Agregar event listeners para hover
+        this.agregarEventListenersTooltip(canvas);
+    }
+
+    /**
+     * Agregar event listeners para tooltips
+     */
+    agregarEventListenersTooltip(canvas) {
+        // Evitar agregar múltiples veces
+        if (canvas.dataset.tooltipListeners === 'true') return;
+        
+        canvas.addEventListener('mousemove', (e) => this.mostrarTooltip(e, canvas));
+        canvas.addEventListener('mouseleave', () => this.ocultarTooltip(canvas));
+        
+        canvas.dataset.tooltipListeners = 'true';
+    }
+
+    /**
+     * Mostrar tooltip en hover
+     */
+    mostrarTooltip(event, canvas) {
+        const tooltipData = JSON.parse(canvas.dataset.tooltipData || '{}');
+        if (!tooltipData.puntos) return;
+        
+        const rect = canvas.getBoundingClientRect();
+        
+        // Calcular coordenadas relativas al canvas real (no al escalado)
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        
+        const x = (event.clientX - rect.left) * scaleX;
+        const y = (event.clientY - rect.top) * scaleY;
+        
+        // Encontrar punto más cercano
+        let puntoCercano = null;
+        let distanciaMinima = Infinity;
+        
+        tooltipData.puntos.forEach(punto => {
+            const distancia = Math.sqrt(Math.pow(x - punto.x, 2) + Math.pow(y - punto.y, 2));
+            if (distancia < distanciaMinima && distancia < 15) { // 15px de tolerancia (escalado)
+                distanciaMinima = distancia;
+                puntoCercano = punto;
+            }
+        });
+        
+        if (puntoCercano) {
+            this.crearTooltip(canvas, puntoCercano, tooltipData, event.clientX, event.clientY);
+        } else {
+            this.ocultarTooltip(canvas);
+        }
+    }
+
+    /**
+     * Crear tooltip
+     */
+    crearTooltip(canvas, punto, tooltipData, clientX, clientY) {
+        // Eliminar tooltip existente
+        this.ocultarTooltip(canvas);
+        
+        // Crear tooltip
+        const tooltip = document.createElement('div');
+        tooltip.className = 'chart-tooltip';
+        tooltip.style.cssText = `
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: sans-serif;
+            pointer-events: none;
+            z-index: 10000;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 200px;
+        `;
+        
+        // Contenido del tooltip
+        const valorFormateado = this.formatearValorTooltip(punto.valor, tooltipData.unidad);
+        tooltip.innerHTML = `
+            <div style="font-weight: bold; margin-bottom: 4px; color: ${this.getColorPorKPI(tooltipData.kpiId)};">
+                ${tooltipData.titulo}
+            </div>
+            <div style="font-size: 14px; font-weight: bold; margin-bottom: 2px;">
+                ${valorFormateado}
+            </div>
+            <div style="font-size: 11px; opacity: 0.8;">
+                ${punto.etiqueta}
+            </div>
+        `;
+        
+        // Posicionar tooltip
+        document.body.appendChild(tooltip);
+        
+        // Calcular posición para evitar salir de la pantalla
+        const tooltipRect = tooltip.getBoundingClientRect();
+        let left = clientX + 10;
+        let top = clientY - tooltipRect.height - 10;
+        
+        // Ajustar si se sale de la pantalla
+        if (left + tooltipRect.width > window.innerWidth) {
+            left = clientX - tooltipRect.width - 10;
+        }
+        
+        if (top < 0) {
+            top = clientY + 10;
+        }
+        
+        tooltip.style.left = left + 'px';
+        tooltip.style.top = top + 'px';
+        
+        // Guardar referencia
+        canvas.dataset.tooltipElement = tooltip.id = 'tooltip-' + Date.now();
+    }
+
+    /**
+     * Ocultar tooltip
+     */
+    ocultarTooltip(canvas) {
+        const tooltipId = canvas.dataset.tooltipElement;
+        if (tooltipId) {
+            const tooltip = document.getElementById(tooltipId);
+            if (tooltip) {
+                tooltip.remove();
+            }
+            delete canvas.dataset.tooltipElement;
+        }
+    }
+
+    /**
+     * Formatear valor para tooltip
+     */
+    formatearValorTooltip(valor, unidad) {
+        switch (unidad) {
+            case 'Litros':
+                return `${valor.toFixed(0)} L`;
+            case 'L/Vaca':
+                return `${valor.toFixed(1)} L/vaca`;
+            case 'Vacas':
+                return `${valor.toFixed(0)} vacas`;
+            case 'kg':
+                return `${valor.toFixed(0)} kg`;
+            case '$':
+                return `$${valor.toFixed(2)}`;
+            case '%':
+                return `${valor.toFixed(2)}%`;
+            default:
+                return `${valor.toFixed(2)} ${unidad}`;
+        }
+    }
+
+    /**
+     * Obtener título del KPI para tooltip
+     */
+    getTituloKPI(kpiId) {
+        const titulos = {
+            'produccionDiaria': 'Producción Diaria',
+            'litrosVacaDiaEvol': 'Litros/Vaca Día',
+            'vacasOrdeñaEvol': 'Evolución Vacas Ordeña',
+            'concentradoDiario': 'Consumo Concentrado',
+            'costoDieta': 'Costo Dieta',
+            'calidadEvol': 'Evolución Sólidos'
+        };
+        
+        return titulos[kpiId] || kpiId;
     }
 
     /**
