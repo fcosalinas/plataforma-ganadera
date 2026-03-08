@@ -247,25 +247,232 @@ class DashboardModule {
         const element = document.getElementById(elementId);
         if (!element) return;
         
-        if (valorAnterior === 0) {
+        if (valorActual === null || valorActual === undefined || valorAnterior === null || valorAnterior === undefined || valorAnterior === 0) {
             element.textContent = '➡️ 0%';
             element.className = 'kpi-trend neutral';
             return;
         }
         
         const cambio = ((valorActual - valorAnterior) / valorAnterior) * 100;
-        const absoluto = Math.abs(cambio);
+        const perspectiva = this.getPerspectivaKPI(elementId);
         
-        if (absoluto < 0.5) {
-            element.textContent = '➡️ 0%';
-            element.className = 'kpi-trend neutral';
-        } else if (cambio > 0) {
-            element.textContent = `📈 +${cambio.toFixed(1)}%`;
+        // Determinar si el cambio es bueno o malo según la perspectiva
+        const esBueno = this.evaluarCambioPerspectiva(cambio, perspectiva);
+        
+        if (esBueno) {
+            element.textContent = `📈 ${cambio.toFixed(1)}%`;
             element.className = 'kpi-trend positive';
-        } else {
+        } else if (cambio < 0) {
             element.textContent = `📉 ${cambio.toFixed(1)}%`;
             element.className = 'kpi-trend negative';
+        } else {
+            element.textContent = `➡️ ${cambio.toFixed(1)}%`;
+            element.className = 'kpi-trend neutral';
         }
+    }
+
+    /**
+     * Obtener perspectiva del KPI (más es mejor o menos es mejor)
+     */
+    getPerspectivaKPI(elementId) {
+        const perspectivas = {
+            // Más es mejor 📈
+            'trendLecheDiaria': 'mas-es-mejor',
+            'trendLitrosVacaDia': 'mas-es-mejor',
+            'trendVacasOrdeña': 'mas-es-mejor',
+            'trendCalidadLeche': 'mas-es-mejor',
+            'trendIngresoEstimado': 'mas-es-mejor',
+            'trendMargenEstimado': 'mas-es-mejor',
+            
+            // Menos es mejor 📉
+            'trendCostoDietaLitro': 'menos-es-mejor',
+            'trendCostoDietaVaca': 'menos-es-mejor',
+            'trendCostoTotalDiario': 'menos-es-mejor',
+            'trendCostoPorLitro': 'menos-es-mejor',
+            'trendCostoAlimentacion': 'menos-es-mejor',
+            
+            // Depende del contexto 📊
+            'trendProteina': 'depende-contexto',
+            'trendGrasa': 'depende-contexto'
+        };
+        
+        return perspectivas[elementId] || 'mas-es-mejor'; // Default: más es mejor
+    }
+
+    /**
+     * Evaluar si el cambio es bueno según la perspectiva
+     */
+    evaluarCambioPerspectiva(cambio, perspectiva) {
+        switch (perspectiva) {
+            case 'mas-es-mejor':
+                return cambio > 0; // Subir es bueno
+                
+            case 'menos-es-mejor':
+                return cambio < 0; // Bajar es bueno
+                
+            case 'depende-contexto':
+                // Para proteína y grasa, necesitamos valores óptimos
+                return this.evaluarCalidadComponente(cambio);
+                
+            default:
+                return cambio > 0; // Default: más es mejor
+        }
+    }
+
+    /**
+     * Evaluar cambios en componentes de calidad (proteína y grasa)
+     */
+    evaluarCalidadComponente(cambio) {
+        // Para calidad, cambios pequeños son buenos, cambios grandes pueden ser malos
+        const cambioAbsoluto = Math.abs(cambio);
+        
+        if (cambioAbsoluto < 0.5) {
+            return cambio > 0; // Pequeños aumentos son buenos
+        } else if (cambioAbsoluto > 2) {
+            return cambio < 0; // Grandes cambios son malos
+        } else {
+            return true; // Cambios moderados son neutros positivos
+        }
+    }
+
+    /**
+     * Actualizar KPI con indicador de perspectiva
+     */
+    actualizarKPIConPerspectiva(elementId, valor, unidad, perspectiva = 'mas-es-mejor') {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        
+        // Formatear valor
+        let valorFormateado;
+        switch (unidad) {
+            case 'litros':
+                valorFormateado = `${valor.toFixed(0)} L`;
+                break;
+            case 'porcentaje':
+                valorFormateado = `${valor.toFixed(2)}%`;
+                break;
+            case 'dias':
+                valorFormateado = `${valor.toFixed(1)} días`;
+                break;
+            case 'dinero':
+                valorFormateado = `$${valor.toFixed(2)}`;
+                break;
+            case 'unidades':
+                valorFormateado = `${valor.toFixed(0)}`;
+                break;
+            default:
+                valorFormateado = valor.toFixed(1);
+        }
+        
+        element.textContent = valorFormateado;
+        
+        // Agregar indicador visual de perspectiva
+        this.agregarIndicadorPerspectiva(element, valor, perspectiva);
+    }
+
+    /**
+     * Agregar indicador visual de perspectiva
+     */
+    agregarIndicadorPerspectiva(element, valor, perspectiva) {
+        // Remover indicadores anteriores
+        const indicadorExistente = element.querySelector('.perspectiva-indicator');
+        if (indicadorExistente) {
+            indicadorExistente.remove();
+        }
+        
+        // Crear indicador
+        const indicador = document.createElement('span');
+        indicador.className = 'perspectiva-indicator';
+        
+        // Determinar estado según perspectiva y valor
+        let estado = this.evaluarEstadoPerspectiva(valor, perspectiva);
+        let icono = this.getIconoPerspectiva(estado);
+        let clase = this.getClasePerspectiva(estado);
+        
+        indicador.textContent = icono;
+        indicador.className = `perspectiva-indicator ${clase}`;
+        
+        // Agregar tooltip con información de perspectiva
+        indicador.title = this.getTooltipPerspectiva(perspectiva, estado);
+        
+        // Insertar después del valor
+        element.appendChild(indicador);
+    }
+
+    /**
+     * Evaluar estado según perspectiva y valor
+     */
+    evaluarEstadoPerspectiva(valor, perspectiva) {
+        // Umbrales generales - estos pueden ser específicos por KPI
+        const umbrales = {
+            'mas-es-mejor': { bueno: 80, medio: 50 },
+            'menos-es-mejor': { bueno: 20, medio: 50 },
+            'depende-contexto': { bueno: 3.2, medio: 3.0 }
+        };
+        
+        const umbral = umbrales[perspectiva] || umbrales['mas-es-mejor'];
+        
+        if (perspectiva === 'mas-es-mejor') {
+            if (valor >= umbral.bueno) return 'excelente';
+            if (valor >= umbral.medio) return 'bueno';
+            return 'bajo';
+        } else {
+            if (valor <= umbral.bueno) return 'excelente';
+            if (valor <= umbral.medio) return 'bueno';
+            return 'alto';
+        }
+    }
+
+    /**
+     * Obtener icono según estado
+     */
+    getIconoPerspectiva(estado) {
+        const iconos = {
+            'excelente': '🟢',
+            'bueno': '🟡',
+            'bajo': '🔴',
+            'alto': '🔴'
+        };
+        return iconos[estado] || '⚪';
+    }
+
+    /**
+     * Obtener clase CSS según estado
+     */
+    getClasePerspectiva(estado) {
+        const clases = {
+            'excelente': 'perspectiva-excelente',
+            'bueno': 'perspectiva-bueno',
+            'bajo': 'perspectiva-bajo',
+            'alto': 'perspectiva-alto'
+        };
+        return clases[estado] || 'perspectiva-neutro';
+    }
+
+    /**
+     * Obtener tooltip de perspectiva
+     */
+    getTooltipPerspectiva(perspectiva, estado) {
+        const mensajes = {
+            'mas-es-mejor': {
+                'excelente': 'Excelente: Valor muy alto (más es mejor)',
+                'bueno': 'Bueno: Valor adecuado',
+                'bajo': 'Bajo: Se necesita mejorar (más es mejor)'
+            },
+            'menos-es-mejor': {
+                'excelente': 'Excelente: Valor muy bajo (menos es mejor)',
+                'bueno': 'Bueno: Valor controlado',
+                'alto': 'Alto: Se necesita reducir (menos es mejor)'
+            },
+            'depende-contexto': {
+                'excelente': 'Excelente: Nivel óptimo',
+                'bueno': 'Bueno: Nivel aceptable',
+                'bajo': 'Bajo: Por debajo del óptimo',
+                'alto': 'Alto: Por encima del óptimo'
+            }
+        };
+        
+        return mensajes[perspectiva]?.[estado] || 'Estado normal';
     }
 
     /**

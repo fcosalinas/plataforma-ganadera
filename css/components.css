@@ -2208,6 +2208,101 @@ background: rgba(128, 128, 128, 0.2);
     border-bottom: none;
 }
 
+/* Indicadores de Perspectiva de KPIs */
+.perspectiva-indicator {
+    display: inline-block;
+    margin-left: var(--spacing-xs);
+    font-size: 14px;
+    cursor: help;
+    opacity: 0.8;
+    transition: all var(--transition-normal);
+}
+
+.perspectiva-indicator:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.perspectiva-excelente {
+    color: #10b981;
+    text-shadow: 0 0 4px rgba(16, 185, 129, 0.3);
+}
+
+.perspectiva-bueno {
+    color: #f59e0b;
+    text-shadow: 0 0 4px rgba(245, 158, 11, 0.3);
+}
+
+.perspectiva-bajo {
+    color: #ef4444;
+    text-shadow: 0 0 4px rgba(239, 68, 68, 0.3);
+}
+
+.perspectiva-alto {
+    color: #ef4444;
+    text-shadow: 0 0 4px rgba(239, 68, 68, 0.3);
+}
+
+.perspectiva-neutro {
+    color: #6b7280;
+    text-shadow: 0 0 4px rgba(107, 114, 128, 0.3);
+}
+
+/* Mejoras en KPIs con perspectiva */
+.kpi-value {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+}
+
+.kpi-value .perspectiva-indicator {
+    flex-shrink: 0;
+    margin-left: var(--spacing-sm);
+}
+
+/* Tooltips personalizados para perspectiva */
+.perspectiva-indicator::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity var(--transition-normal);
+    z-index: 1000;
+}
+
+.perspectiva-indicator:hover::after {
+    opacity: 1;
+}
+
+/* Responsive para indicadores de perspectiva */
+@media (max-width: 768px) {
+    .perspectiva-indicator {
+        font-size: 12px;
+        margin-left: var(--spacing-xs);
+    }
+    
+    .kpi-value {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+    }
+    
+    .kpi-value .perspectiva-indicator {
+        align-self: flex-end;
+        margin-left: 0;
+    }
+}
+
 /* Panel Sections - 100% ancho con elementos idénticos */
 .panel-section {
     background: var(--bg-card);
