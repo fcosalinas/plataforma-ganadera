@@ -82,7 +82,11 @@ class TablaModule {
         fundos.forEach(fundo => {
             const option = document.createElement('option');
             option.value = fundo;
-            option.textContent = fundo;
+            // Mapear nombres para mostrar
+            let nombreMostrar = fundo;
+            if (fundo === 'Dollinco') nombreMostrar = 'Agricola A';
+            else if (fundo === 'Pitriuco') nombreMostrar = 'Agricola B';
+            option.textContent = nombreMostrar;
             selector.appendChild(option);
         });
         

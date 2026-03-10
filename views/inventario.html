@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario - Plataforma Ganadera</title>
+    <link rel="stylesheet" href="../css/main.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <style>
+        .inventario-container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .inventario-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .inventario-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .inventario-title::before {
+            content: "📦";
+            font-size: 2.5rem;
+        }
+        
+        .inventario-controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .control-group label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #6b7280;
+        }
+        
+        .control-group select,
+        .control-group input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+        
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .kpi-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+        }
+        
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .kpi-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .kpi-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #6b7280;
+        }
+        
+        .kpi-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .kpi-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+        
+        .kpi-trend {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .trend-up {
+            color: #10b981;
+        }
+        
+        .trend-down {
+            color: #ef4444;
+        }
+        
+        .trend-neutral {
+            color: #6b7280;
+        }
+        
+        .charts-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .chart-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        
+        .chart-controls {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chart-control {
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .chart-control:hover {
+            background: #f3f4f6;
+        }
+        
+        .chart-control.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        
+        .alerts-section {
+            margin-bottom: 30px;
+        }
+        
+        .alerts-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .alerts-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alerts-title::before {
+            content: "🚨";
+        }
+        
+        .alerts-grid {
+            display: grid;
+            gap: 15px;
+        }
+        
+        .alert-card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            border-left: 4px solid;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .alert-critical {
+            border-left-color: #ef4444;
+        }
+        
+        .alert-warning {
+            border-left-color: #f59e0b;
+        }
+        
+        .alert-info {
+            border-left-color: #3b82f6;
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+        
+        .alert-description {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .alert-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .alert-action {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .alert-action-primary {
+            background: #3b82f6;
+            color: white;
+            border: none;
+        }
+        
+        .alert-action-secondary {
+            background: #f3f4f6;
+            color: #6b7280;
+            border: 1px solid #d1d5db;
+        }
+        
+        .forecast-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+            margin-bottom: 30px;
+        }
+        
+        .forecast-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .forecast-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .forecast-title::before {
+            content: "📈";
+        }
+        
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .forecast-item {
+            padding: 15px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+        
+        .forecast-item-title {
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .forecast-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 5px;
+        }
+        
+        .forecast-description {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+        
+        .inventory-table-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .table-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .table-title::before {
+            content: "📋";
+        }
+        
+        .inventory-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .inventory-table th {
+            background: #f9fafb;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .inventory-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .inventory-table tr:hover {
+            background: #f9fafb;
+        }
+        
+        .stock-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .stock-critical {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+        
+        .stock-warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        
+        .stock-good {
+            background: #f0fdf4;
+            color: #16a34a;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+        
+        .action-btn-primary {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .action-btn-secondary {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        @media (max-width: 768px) {
+            .inventario-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .charts-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .kpi-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .forecast-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="inventario-container">
+        <!-- Header -->
+        <div class="inventario-header">
+            <div class="inventario-title">
+                Gestión de Inventario
+            </div>
+            <div class="inventario-controls">
+                <div class="control-group">
+                    <label for="fundoSelect">Fundo</label>
+                    <select id="fundoSelect">
+                        <option value="todos">Todos los Fundos</option>
+                        <option value="fundo1">Fundo 1 - Agrícola A</option>
+                        <option value="fundo2">Fundo 2 - Agrícola B</option>
+                        <option value="fundo3">Fundo 3 - Agrícola C</option>
+                        <option value="fundo4">Fundo 4 - Agrícola D</option>
+                        <option value="fundo5">Fundo 5 - Agrícola E</option>
+                        <option value="fundo6">Fundo 6 - Agrícola F</option>
+                        <option value="fundo7">Fundo 7 - Agrícola G</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="periodoSelect">Período</label>
+                    <select id="periodoSelect">
+                        <option value="7d">Últimos 7 días</option>
+                        <option value="30d" selected>Últimos 30 días</option>
+                        <option value="90d">Últimos 90 días</option>
+                        <option value="1y">Último año</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="productoSelect">Producto</label>
+                    <select id="productoSelect">
+                        <option value="todos">Todos los productos</option>
+                        <option value="concentrado">Concentrado</option>
+                        <option value="ensilaje">Ensilaje</option>
+                        <option value="sales">Sales Minerales</option>
+                        <option value="fibra">Fibra</option>
+                        <option value="medicamentos">Medicamentos</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs Principales -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-title">Valor Total Inventario</div>
+                    <div class="kpi-icon" style="background: #dbeafe; color: #3b82f6;">💰</div>
+                </div>
+                <div class="kpi-value">$2,458,320</div>
+                <div class="kpi-trend trend-up">
+                    <span>↑</span>
+                    <span>12.5% vs mes anterior</span>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-title">Días de Stock Promedio</div>
+                    <div class="kpi-icon" style="background: #dcfce7; color: #16a34a;">📅</div>
+                </div>
+                <div class="kpi-value">23.5</div>
+                <div class="kpi-trend trend-neutral">
+                    <span>→</span>
+                    <span>Estable vs mes anterior</span>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-title">Rotación Inventario</div>
+                    <div class="kpi-icon" style="background: #fef3c7; color: #d97706;">🔄</div>
+                </div>
+                <div class="kpi-value">4.2x</div>
+                <div class="kpi-trend trend-up">
+                    <span>↑</span>
+                    <span>0.3x vs mes anterior</span>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-title">Merma Acumulada</div>
+                    <div class="kpi-icon" style="background: #fee2e2; color: #dc2626;">⚠️</div>
+                </div>
+                <div class="kpi-value">3.8%</div>
+                <div class="kpi-trend trend-down">
+                    <span>↓</span>
+                    <span>1.2% vs mes anterior</span>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-title">Pedidos Pendientes</div>
+                    <div class="kpi-icon" style="background: #e0e7ff; color: #4f46e5;">📦</div>
+                </div>
+                <div class="kpi-value">12</div>
+                <div class="kpi-trend trend-neutral">
+                    <span>→</span>
+                    <span>3 urgentes, 9 programados</span>
+                </div>
+            </div>
+            
+            <div class="kpi-card">
+                <div class="kpi-header">
+                    <div class="kpi-title">Eficiencia Almacenamiento</div>
+                    <div class="kpi-icon" style="background: #f3e8ff; color: #9333ea;">📊</div>
+                </div>
+                <div class="kpi-value">87.3%</div>
+                <div class="kpi-trend trend-up">
+                    <span>↑</span>
+                    <span>2.1% vs mes anterior</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertas Críticas -->
+        <div class="alerts-section">
+            <div class="alerts-header">
+                <div class="alerts-title">Alertas Críticas</div>
+                <button class="alert-action alert-action-primary">Ver Todas</button>
+            </div>
+            <div class="alerts-grid">
+                <div class="alert-card alert-critical">
+                    <div class="alert-content">
+                        <div class="alert-title">🚨 Stock Crítico - Concentrado Fundo 3</div>
+                        <div class="alert-description">
+                            Quedan 2 días de stock. Nivel actual: 150kg vs consumo diario: 75kg. Pedido urgente necesario.
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="alert-action alert-action-primary">Generar Pedido</button>
+                        <button class="alert-action alert-action-secondary">Ver Detalles</button>
+                    </div>
+                </div>
+                
+                <div class="alert-card alert-warning">
+                    <div class="alert-content">
+                        <div class="alert-title">⚠️ Merma Elevada - Ensilaje Fundo 1</div>
+                        <div class="alert-description">
+                            Merma del 8.5% supera el umbral del 5%. Revisar condiciones de almacenamiento.
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="alert-action alert-action-primary">Investigar</button>
+                        <button class="alert-action alert-action-secondary">Ver Histórico</button>
+                    </div>
+                </div>
+                
+                <div class="alert-card alert-info">
+                    <div class="alert-content">
+                        <div class="alert-title">📈 Oportunidad - Compra Sales Minerales</div>
+                        <div class="alert-description">
+                            Proveedor ofrece 15% descuento por compra mayor a 500kg. Stock actual: 200kg.
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        <button class="alert-action alert-action-primary">Evaluar</button>
+                        <button class="alert-action alert-action-secondary">Ignorar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráficos -->
+        <div class="charts-section">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Evolución del Inventario</div>
+                    <div class="chart-controls">
+                        <button class="chart-control active">Valor</button>
+                        <button class="chart-control">Volumen</button>
+                        <button class="chart-control">Unidades</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="inventarioEvolutionChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Consumo vs Reposición</div>
+                    <div class="chart-controls">
+                        <button class="chart-control active">Últimos 30 días</button>
+                        <button class="chart-control">Últimos 90 días</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="consumoReposicionChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Distribución por Producto</div>
+                    <div class="chart-controls">
+                        <button class="chart-control active">Por Valor</button>
+                        <button class="chart-control">Por Volumen</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="distribucionChart"></canvas>
+                </div>
+            </div>
+            
+            <div class="chart-card">
+                <div class="chart-header">
+                    <div class="chart-title">Eficiencia por Fundo</div>
+                    <div class="chart-controls">
+                        <button class="chart-control active">Rotación</button>
+                        <button class="chart-control">Merma</button>
+                        <button class="chart-control">Costo</button>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="eficienciaChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pronósticos -->
+        <div class="forecast-section">
+            <div class="forecast-header">
+                <div class="forecast-title">Pronósticos y Recomendaciones</div>
+                <button class="alert-action alert-action-primary">Actualizar Pronóstico</button>
+            </div>
+            <div class="forecast-grid">
+                <div class="forecast-item">
+                    <div class="forecast-item-title">
+                        <span>📈</span>
+                        <span>Demanda Próximos 30 días</span>
+                    </div>
+                    <div class="forecast-value">+15.2%</div>
+                    <div class="forecast-description">
+                        Basado en tendencia histórica y proyección de producción
+                    </div>
+                </div>
+                
+                <div class="forecast-item">
+                    <div class="forecast-item-title">
+                        <span>💰</span>
+                        <span>Inversión Recomendada</span>
+                    </div>
+                    <div class="forecast-value">$458,000</div>
+                    <div class="forecast-description">
+                        Para mantener stock óptimo durante los próximos 60 días
+                    </div>
+                </div>
+                
+                <div class="forecast-item">
+                    <div class="forecast-item-title">
+                        <span>⚠️</span>
+                        <span>Riesgo de Desabastecimiento</span>
+                    </div>
+                    <div class="forecast-value">2 productos</div>
+                    <div class="forecast-description">
+                        Concentrado y Sales Minerales en los próximos 15 días
+                    </div>
+                </div>
+                
+                <div class="forecast-item">
+                    <div class="forecast-item-title">
+                        <span>🎯</span>
+                        <span>Oportunidad de Optimización</span>
+                    </div>
+                    <div class="forecast-value">$125,000</div>
+                    <div class="forecast-description">
+                            Potencial de ahorro mediante compras consolidadas
+                    </div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Tabla Detallada -->
+        <div class="inventory-table-section">
+            <div class="table-header">
+                <div class="table-title">Inventario Detallado</div>
+                <div class="action-buttons">
+                    <button class="action-btn action-btn-primary">Exportar Excel</button>
+                    <button class="action-btn action-btn-secondary">Generar Pedido</button>
+                </div>
+            </div>
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Fundo</th>
+                        <th>Stock Actual</th>
+                        <th>Consumo Diario</th>
+                        <th>Días de Stock</th>
+                        <th>Estado</th>
+                        <th>Último Pedido</th>
+                        <th>Próximo Pedido</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Concentrado Premium</strong></td>
+                        <td>Fundo 1</td>
+                        <td>850 kg</td>
+                        <td>45 kg</td>
+                        <td>18.9</td>
+                        <td><span class="stock-status stock-good">Óptimo</span></td>
+                        <td>15/02/2026</td>
+                        <td>05/03/2026</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-primary">Pedir</button>
+                                <button class="action-btn action-btn-secondary">Ver</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Concentrado Premium</strong></td>
+                        <td>Fundo 3</td>
+                        <td>150 kg</td>
+                        <td>75 kg</td>
+                        <td>2.0</td>
+                        <td><span class="stock-status stock-critical">Crítico</span></td>
+                        <td>10/02/2026</td>
+                        <td>Inmediato</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-primary">Urgente</button>
+                                <button class="action-btn action-btn-secondary">Ver</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Ensilaje de Maíz</strong></td>
+                        <td>Fundo 1</td>
+                        <td>2,500 kg</td>
+                        <td>120 kg</td>
+                        <td>20.8</td>
+                        <td><span class="stock-status stock-good">Óptimo</span></td>
+                        <td>01/02/2026</td>
+                        <td>20/03/2026</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-primary">Pedir</button>
+                                <button class="action-btn action-btn-secondary">Ver</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Sales Minerales</strong></td>
+                        <td>Fundo 2</td>
+                        <td>45 kg</td>
+                        <td>8 kg</td>
+                        <td>5.6</td>
+                        <td><span class="stock-status stock-warning">Bajo</span></td>
+                        <td>20/01/2026</td>
+                        <td>25/02/2026</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-primary">Pedir</button>
+                                <button class="action-btn action-btn-secondary">Ver</button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fibra de Alfalfa</strong></td>
+                        <td>Fundo 4</td>
+                        <td>1,200 kg</td>
+                        <td>35 kg</td>
+                        <td>34.3</td>
+                        <td><span class="stock-status stock-good">Óptimo</span></td>
+                        <td>05/02/2026</td>
+                        <td>15/04/2026</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-primary">Pedir</button>
+                                <button class="action-btn action-btn-secondary">Ver</button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="../js/utils/charts.js"></script>
+    <script src="../js/modules/inventario.js"></script>
+</body>
+</html>

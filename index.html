@@ -12,13 +12,40 @@
     <header class="header">
         <div class="container">
             <h1>🐄 Plataforma Ganadera Digital</h1>
-            <nav class="nav">
-                <button class="nav-btn active" data-section="dashboard">Dashboard</button>
-                <button class="nav-btn" data-section="carga">Integración de Datos</button>
-                <button class="nav-btn" data-section="tabla">📋 Tabla de Datos</button>
-                <button class="nav-btn" data-section="benchmark">📊 Benchmark</button>
-                <button class="nav-btn" data-section="historial">Historial</button>
-            </nav>
+        </div>
+        
+        <!-- Navegación Rápida Flotante -->
+        <div class="quick-nav">
+            <div class="quick-nav-title">
+                <span class="quick-nav-title-icon">☰</span>
+                <span class="quick-nav-title-text">Navegación Rápida</span>
+            </div>
+            <div class="quick-nav-buttons">
+                <button class="quick-nav-btn" data-target="dashboard" title="Ir a Dashboard">
+                    <span class="quick-nav-icon">📊</span>
+                    <span class="quick-nav-label">Dashboard</span>
+                </button>
+                <button class="quick-nav-btn" data-target="inventario" title="Ir a Inventario">
+                    <span class="quick-nav-icon">📦</span>
+                    <span class="quick-nav-label">Inventario</span>
+                </button>
+                <button class="quick-nav-btn" data-target="carga" title="Ir a Carga de Datos">
+                    <span class="quick-nav-icon">📥</span>
+                    <span class="quick-nav-label">Carga</span>
+                </button>
+                <button class="quick-nav-btn" data-target="tabla" title="Ir a Tabla de Datos">
+                    <span class="quick-nav-icon">📋</span>
+                    <span class="quick-nav-label">Tabla</span>
+                </button>
+                <button class="quick-nav-btn" data-target="benchmark" title="Ir a Benchmark">
+                    <span class="quick-nav-icon">📈</span>
+                    <span class="quick-nav-label">Benchmark</span>
+                </button>
+                <button class="quick-nav-btn" data-target="historial" title="Ir a Historial">
+                    <span class="quick-nav-icon">📜</span>
+                    <span class="quick-nav-label">Historial</span>
+                </button>
+            </div>
         </div>
     </header>
 
@@ -37,6 +64,8 @@
                             <label for="fundoDashboard">Fundo:</label>
                             <select id="fundoDashboard" onchange="window.plataforma.modules.dashboard.filtrarPorFundo(this.value)">
                                 <option value="todos">Todos los Fundos</option>
+                                <option value="Dollinco">Agricola A</option>
+                                <option value="Pitriuco">Agricola B</option>
                             </select>
                         </div>
                         
@@ -466,7 +495,7 @@
                             <div class="action-info">
                                 <small>
                                     <strong>Período:</strong> 03/06/2023 al 28/02/2026 (1000 días)<br>
-                                    <strong>Fundos:</strong> Dollinco, Pitriuco<br>
+                                    <strong>Fundos:</strong> Agricola A, Agricola B<br>
                                     <strong>Registros:</strong> 2000 totales
                                 </small>
                             </div>
@@ -525,8 +554,8 @@
                             </div>
                             <div class="info-card">
                                 <h4>🏭 Fundos Simulados</h4>
-                                <p><strong>Dollinco:</strong> 120 vacas, 850 L/día<br>
-                                   <strong>Pitriuco:</strong> 95 vacas, 650 L/día</p>
+                                <p><strong>Agricola A:</strong> 120 vacas, 850 L/día<br>
+                                   <strong>Agricola B:</strong> 95 vacas, 650 L/día</p>
                             </div>
                             <div class="info-card">
                                 <h4>📈 Métricas Incluidas</h4>
@@ -550,6 +579,8 @@
                             <label for="filtroFundo">Filtrar por Fundo:</label>
                             <select id="filtroFundo">
                                 <option value="todos">Todos los Fundos</option>
+                                <option value="Dollinco">Agricola A</option>
+                                <option value="Pitriuco">Agricola B</option>
                             </select>
                         </div>
                     </div>
@@ -586,6 +617,8 @@
                             <label for="benchmarkFundo">Fundo:</label>
                             <select id="benchmarkFundo">
                                 <option value="todos">Todos los Fundos</option>
+                                <option value="Dollinco">Agricola A</option>
+                                <option value="Pitriuco">Agricola B</option>
                             </select>
                         </div>
                     </div>
@@ -614,6 +647,280 @@
                 </div>
             </section>
 
+            <!-- Inventario Section -->
+            <section id="inventario" class="section">
+                <div class="inventario-container">
+                    <div class="inventario-header">
+                        <div class="inventario-title">
+                            Gestión de Inventario
+                        </div>
+                        <div class="inventario-controls">
+                            <div class="control-group">
+                                <label for="fundoInventario">Fundo</label>
+                                <select id="fundoInventario">
+                                    <option value="todos">Todos los Fundos</option>
+                                    <option value="fundo1">Fundo 1 - Agrícola A</option>
+                                    <option value="fundo2">Fundo 2 - Agrícola B</option>
+                                    <option value="fundo3">Fundo 3 - Agrícola C</option>
+                                    <option value="fundo4">Fundo 4 - Agrícola D</option>
+                                    <option value="fundo5">Fundo 5 - Agrícola E</option>
+                                    <option value="fundo6">Fundo 6 - Agrícola F</option>
+                                    <option value="fundo7">Fundo 7 - Agrícola G</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label for="periodoInventario">Período</label>
+                                <select id="periodoInventario">
+                                    <option value="7d">Últimos 7 días</option>
+                                    <option value="30d" selected>Últimos 30 días</option>
+                                    <option value="90d">Últimos 90 días</option>
+                                    <option value="1y">Último año</option>
+                                </select>
+                            </div>
+                            <div class="control-group">
+                                <label for="productoInventario">Producto</label>
+                                <select id="productoInventario">
+                                    <option value="todos">Todos los productos</option>
+                                    <option value="concentrado">Concentrado</option>
+                                    <option value="ensilaje">Ensilaje</option>
+                                    <option value="sales">Sales Minerales</option>
+                                    <option value="fibra">Fibra</option>
+                                    <option value="medicamentos">Medicamentos</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPIs Principales -->
+                    <div class="kpi-grid">
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-title">Valor Total Inventario</div>
+                                <div class="kpi-icon" style="background: #dbeafe; color: #3b82f6;">💰</div>
+                            </div>
+                            <div class="kpi-value" id="kpiValorTotal">$2,458,320</div>
+                            <div class="kpi-trend trend-up">
+                                <span>↑</span>
+                                <span>12.5% vs mes anterior</span>
+                            </div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-title">Días de Stock Promedio</div>
+                                <div class="kpi-icon" style="background: #dcfce7; color: #16a34a;">📅</div>
+                            </div>
+                            <div class="kpi-value" id="kpiDiasStock">23.5</div>
+                            <div class="kpi-trend trend-neutral">
+                                <span>→</span>
+                                <span>Estable vs mes anterior</span>
+                            </div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-title">Rotación Inventario</div>
+                                <div class="kpi-icon" style="background: #fef3c7; color: #d97706;">🔄</div>
+                            </div>
+                            <div class="kpi-value" id="kpiRotacion">4.2x</div>
+                            <div class="kpi-trend trend-up">
+                                <span>↑</span>
+                                <span>0.3x vs mes anterior</span>
+                            </div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-title">Merma Acumulada</div>
+                                <div class="kpi-icon" style="background: #fee2e2; color: #dc2626;">⚠️</div>
+                            </div>
+                            <div class="kpi-value" id="kpiMerma">3.8%</div>
+                            <div class="kpi-trend trend-down">
+                                <span>↓</span>
+                                <span>1.2% vs mes anterior</span>
+                            </div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-title">Pedidos Pendientes</div>
+                                <div class="kpi-icon" style="background: #e0e7ff; color: #4f46e5;">📦</div>
+                            </div>
+                            <div class="kpi-value" id="kpiPedidos">12</div>
+                            <div class="kpi-trend trend-neutral">
+                                <span>→</span>
+                                <span>3 urgentes, 9 programados</span>
+                            </div>
+                        </div>
+                        
+                        <div class="kpi-card">
+                            <div class="kpi-header">
+                                <div class="kpi-title">Eficiencia Almacenamiento</div>
+                                <div class="kpi-icon" style="background: #f3e8ff; color: #9333ea;">📊</div>
+                            </div>
+                            <div class="kpi-value" id="kpiEficiencia">87.3%</div>
+                            <div class="kpi-trend trend-up">
+                                <span>↑</span>
+                                <span>2.1% vs mes anterior</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alertas Críticas -->
+                    <div class="alerts-section">
+                        <div class="alerts-header">
+                            <div class="alerts-title">Alertas Críticas</div>
+                            <button class="alert-action alert-action-primary">Ver Todas</button>
+                        </div>
+                        <div class="alerts-grid" id="alertasInventario">
+                            <!-- Las alertas se cargarán dinámicamente -->
+                        </div>
+                    </div>
+
+                    <!-- Gráficos -->
+                    <div class="charts-section">
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">Evolución del Inventario</div>
+                                <div class="chart-controls">
+                                    <button class="chart-control active">Valor</button>
+                                    <button class="chart-control">Volumen</button>
+                                    <button class="chart-control">Unidades</button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="inventarioEvolutionChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">Consumo vs Reposición</div>
+                                <div class="chart-controls">
+                                    <button class="chart-control active">Últimos 30 días</button>
+                                    <button class="chart-control">Últimos 90 días</button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="consumoReposicionChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">Distribución por Producto</div>
+                                <div class="chart-controls">
+                                    <button class="chart-control active">Por Valor</button>
+                                    <button class="chart-control">Por Volumen</button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="distribucionChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <div class="chart-title">Eficiencia por Fundo</div>
+                                <div class="chart-controls">
+                                    <button class="chart-control active">Rotación</button>
+                                    <button class="chart-control">Merma</button>
+                                    <button class="chart-control">Costo</button>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="eficienciaChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pronósticos -->
+                    <div class="forecast-section">
+                        <div class="forecast-header">
+                            <div class="forecast-title">Pronósticos y Recomendaciones</div>
+                            <button class="alert-action alert-action-primary">Actualizar Pronóstico</button>
+                        </div>
+                        <div class="forecast-grid">
+                            <div class="forecast-item">
+                                <div class="forecast-item-title">
+                                    <span>📈</span>
+                                    <span>Demanda Próximos 30 días</span>
+                                </div>
+                                <div class="forecast-value" id="pronosticoDemanda">+15.2%</div>
+                                <div class="forecast-description">
+                                    Basado en tendencia histórica y proyección de producción
+                                </div>
+                            </div>
+                            
+                            <div class="forecast-item">
+                                <div class="forecast-item-title">
+                                    <span>💰</span>
+                                    <span>Inversión Recomendada</span>
+                                </div>
+                                <div class="forecast-value" id="pronosticoInversion">$458,000</div>
+                                <div class="forecast-description">
+                                    Para mantener stock óptimo durante los próximos 60 días
+                                </div>
+                            </div>
+                            
+                            <div class="forecast-item">
+                                <div class="forecast-item-title">
+                                    <span>⚠️</span>
+                                    <span>Riesgo de Desabastecimiento</span>
+                                </div>
+                                <div class="forecast-value" id="pronosticoRiesgo">2 productos</div>
+                                <div class="forecast-description">
+                                    Concentrado y Sales Minerales en los próximos 15 días
+                                </div>
+                            </div>
+                            
+                            <div class="forecast-item">
+                                <div class="forecast-item-title">
+                                    <span>🎯</span>
+                                    <span>Oportunidad de Optimización</span>
+                                </div>
+                                <div class="forecast-value" id="pronosticoOportunidad">$125,000</div>
+                                <div class="forecast-description">
+                                    Potencial de ahorro mediante compras consolidadas
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="forecastChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Tabla Detallada -->
+                    <div class="inventory-table-section">
+                        <div class="table-header">
+                            <div class="table-title">Inventario Detallado</div>
+                            <div class="action-buttons">
+                                <button class="action-btn action-btn-primary">Exportar Excel</button>
+                                <button class="action-btn action-btn-secondary">Generar Pedido</button>
+                            </div>
+                        </div>
+                        <table class="inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Fundo</th>
+                                    <th>Stock Actual</th>
+                                    <th>Consumo Diario</th>
+                                    <th>Días de Stock</th>
+                                    <th>Estado</th>
+                                    <th>Último Pedido</th>
+                                    <th>Próximo Pedido</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaInventario">
+                                <!-- Los datos se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <!-- Historial Section -->
             <section id="historial" class="section">
                 <div class="historial-container">
@@ -623,6 +930,8 @@
                             <label for="historialFundo">Fundo:</label>
                             <select id="historialFundo">
                                 <option value="todos">Todos los Fundos</option>
+                                <option value="Dollinco">Agricola A</option>
+                                <option value="Pitriuco">Agricola B</option>
                             </select>
                         </div>
                     </div>
@@ -671,6 +980,7 @@
     <script src="js/modules/dashboard.js"></script>
     <script src="js/modules/tabla.js"></script>
     <script src="js/modules/benchmark.js"></script>
+    <script src="js/modules/inventario.js"></script>
     <script src="js/modules/historial.js"></script>
     <script src="js/main.js"></script>
 </body>

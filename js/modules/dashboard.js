@@ -154,9 +154,14 @@ class DashboardModule {
      * Actualizar KPIs del dashboard
      */
     actualizarKPIs(datos) {
+        console.log(`🔍 actualizarKPIs llamado con ${datos.length} datos`);
+        console.log(`🏭 Fundo seleccionado: "${this.fundoSeleccionado}"`);
+        
         if (this.fundoSeleccionado === 'todos') {
+            console.log(`📊 Llamando a actualizarKPIsTodosFundos`);
             this.actualizarKPIsTodosFundos(datos);
         } else {
+            console.log(`📊 Llamando a actualizarKPIsFundoEspecifico con fundo: "${this.fundoSeleccionado}"`);
             this.actualizarKPIsFundoEspecifico(datos, this.fundoSeleccionado);
         }
         
@@ -192,13 +197,28 @@ class DashboardModule {
         document.getElementById('kpiCostoDietaLitro').textContent = `$${ultimoDia.costoDietaLitro.toFixed(3)}`;
         this.actualizarTrend('trendCostoDietaLitro', ultimoDia.costoDietaLitro, penultimoDia.costoDietaLitro);
         
-        // % proteína
-        document.getElementById('kpiProteina').textContent = `${ultimoDia.proteina.toFixed(2)}%`;
-        this.actualizarTrend('trendProteina', ultimoDia.proteina, penultimoDia.proteina);
+        // % proteína - calcular promedio para "Todos los Fundos"
+        const datosUltimaFecha = datos.filter(d => d.fecha === ultimoDia.fecha);
+        const promedioProteina = datosUltimaFecha.reduce((sum, d) => sum + (d.proteina || 0), 0) / datosUltimaFecha.length;
+        const promedioGrasa = datosUltimaFecha.reduce((sum, d) => sum + (d.grasa || 0), 0) / datosUltimaFecha.length;
+        
+        // Para trends, usar promedio del día anterior
+        const datosPenultimaFecha = penultimoDia.fecha ? datos.filter(d => d.fecha === penultimoDia.fecha) : [];
+        const promedioProteinaAnterior = datosPenultimaFecha.length > 0 ? 
+            datosPenultimaFecha.reduce((sum, d) => sum + (d.proteina || 0), 0) / datosPenultimaFecha.length : 
+            promedioProteina;
+        const promedioGrasaAnterior = datosPenultimaFecha.length > 0 ? 
+            datosPenultimaFecha.reduce((sum, d) => sum + (d.grasa || 0), 0) / datosPenultimaFecha.length : 
+            promedioGrasa;
+        
+        console.log(`🔄 Proteína promedio: ${promedioProteina.toFixed(2)}, Grasa promedio: ${promedioGrasa.toFixed(2)}`);
+        
+        document.getElementById('kpiProteina').textContent = `${promedioProteina.toFixed(2)}%`;
+        this.actualizarTrend('trendProteina', promedioProteina, promedioProteinaAnterior);
         
         // % grasa
-        document.getElementById('kpiGrasa').textContent = `${ultimoDia.grasa.toFixed(2)}%`;
-        this.actualizarTrend('trendGrasa', ultimoDia.grasa, penultimoDia.grasa);
+        document.getElementById('kpiGrasa').textContent = `${promedioGrasa.toFixed(2)}%`;
+        this.actualizarTrend('trendGrasa', promedioGrasa, promedioGrasaAnterior);
         
         // Panel 3: Alimentación
         // Costo dieta / vaca día
@@ -1167,10 +1187,17 @@ class DashboardModule {
      * Actualizar KPIs para un fundo específico
      */
     actualizarKPIsFundoEspecifico(datos, fundo) {
+        console.log(`🔍 actualizarKPIsFundoEspecifico llamado con fundo: "${fundo}"`);
+        console.log(`📊 Total datos disponibles: ${datos.length}`);
+        
         // Obtener el dato más reciente del fundo
         const datoFundo = datos
             .filter(d => d.fundo === fundo)
             .sort((a, b) => new Date(b.fecha) - new Date(a.fecha))[0];
+
+        console.log(`📋 Dato más reciente encontrado:`, datoFundo);
+        console.log(`📋 Proteína en dato: ${datoFundo?.proteina}`);
+        console.log(`📋 Grasa en dato: ${datoFundo?.grasa}`);
 
         if (!datoFundo) {
             this.mostrarEstadoVacio();
@@ -1188,6 +1215,17 @@ class DashboardModule {
         this.actualizarKPI('kpiMargenEstimado', `$${(datoFundo.margenEstimado || 0).toFixed(0)}`);
         this.actualizarKPI('kpiStockDiario', `${(datoFundo.stockDiario || 0).toFixed(0)} kg`);
         this.actualizarKPI('kpiStockUltimoDia', `${(datoFundo.stockDiario || 0).toFixed(0)} kg`);
+        
+        // Actualizar KPIs de proteína y grasa
+        console.log(`🔄 Actualizando KPIs de proteína y grasa para fundo específico`);
+        const proteinaValor = `${(datoFundo.proteina || 0).toFixed(2)}%`;
+        const grasaValor = `${(datoFundo.grasa || 0).toFixed(2)}%`;
+        console.log(`📊 Valores a mostrar - Proteína: ${proteinaValor}, Grasa: ${grasaValor}`);
+        
+        this.actualizarKPI('kpiProteina', proteinaValor);
+        this.actualizarKPI('kpiGrasa', grasaValor);
+        
+        console.log(`✅ KPIs de fundo específico actualizados - Proteína: ${proteinaValor}, Grasa: ${grasaValor}`);
 
         // Calcular tendencia para fundo específico
         this.calcularTendenciasValor([datoFundo]);

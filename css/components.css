@@ -92,7 +92,7 @@
 .kpis-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-xs);
+    gap: 2px;
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -104,11 +104,11 @@
 .kpis-container > .kpis-grid > .kpi-card.valor {
     border: 1px solid var(--border-dark);
     border-radius: var(--border-radius);
-    padding: var(--spacing-sm);
+    padding: 5px;
     transition: all var(--transition-normal);
     position: relative;
     overflow: hidden;
-    width: 24% !important;
+    width: 22% !important;
     min-width: 100px;
     height: auto; /* Altura natural */
     box-sizing: border-box;
@@ -116,8 +116,8 @@
 }
 
 .kpis-container > .kpis-grid > .kpi-card.tabla {
-    width: 31% !important;
-    min-width: 150px;
+    width: 30% !important;
+    min-width: 140px;
     height: auto; /* Altura natural */
     box-sizing: border-box;
     flex: 0 0 auto; /* No crecer ni encoger, usar width definido */
@@ -128,7 +128,7 @@
     background: var(--bg-card);
     border: 1px solid var(--border-dark);
     border-radius: var(--border-radius);
-    padding: var(--spacing-sm);
+    padding: 5px;
     transition: all var(--transition-normal);
     position: relative;
     overflow: hidden;
@@ -140,9 +140,9 @@
 .kpis-container > .kpis-grid > .kpi-card.evolutivo[data-kpi="produccionDiaria"],
 .kpis-container > .kpis-grid > .kpi-card.evolutivo[data-kpi="concentrado"],
 .kpis-container > .kpis-grid > .kpi-card.evolutivo[data-kpi="proteina"] {
-    width: 32% !important;
-    min-width: 280px !important;
-    max-width: 32% !important;
+    width: 31% !important;
+    min-width: 260px !important;
+    max-width: 31% !important;
     height: 250px !important;
     box-sizing: border-box !important;
     flex: 0 0 auto; /* No crecer ni encoger, usar width definido */
@@ -153,15 +153,15 @@
     background: var(--bg-evolutivo);
     border: 1px solid var(--border-dark);
     border-radius: var(--border-radius);
-    padding: var(--spacing-md);
+    padding: 5px;
     transition: all var(--transition-normal);
     position: relative;
     overflow: hidden;
     height: 250px;
     display: flex;
     flex-direction: column;
-    width: 32% !important;
-    min-width: 280px;
+    width: 31% !important;
+    min-width: 260px;
     box-sizing: border-box;
     flex: 0 0 auto; /* No crecer ni encoger, usar width definido */
 }
@@ -194,7 +194,7 @@
     background: var(--bg-valor);
     border: 1px solid var(--border-dark);
     border-radius: var(--border-radius);
-    padding: var(--spacing-sm);
+    padding: 5px;
     transition: all var(--transition-normal);
     position: relative;
     overflow: hidden;
@@ -289,6 +289,7 @@
     font-weight: 700;
     line-height: 1;
     margin-bottom: var(--spacing-xs);
+    text-align: center;
 }
 
 .kpi-card.valor .kpi-trend {
@@ -310,7 +311,7 @@
     background: var(--bg-evolutivo);
     border: 1px solid var(--border-dark);
     border-radius: var(--border-radius);
-    padding: var(--spacing-md);
+    padding: 5px;
     transition: all var(--transition-normal);
     position: relative;
     overflow: hidden;
@@ -399,7 +400,7 @@
 
 /* Tipo TABLA - Tarjeta con matriz de valores */
 .kpi-card.tabla {
-    padding: var(--spacing-md);
+    padding: 5px;
 }
 
 .kpi-card.tabla .kpi-content {
@@ -458,6 +459,7 @@
     font-size: var(--font-size-xl);
     font-weight: 700;
     line-height: 1;
+    text-align: center;
 }
 
 .kpi-trend {
@@ -1054,13 +1056,16 @@ background: rgba(128, 128, 128, 0.2);
     color: white;
     border: none;
     border-radius: var(--border-radius);
-    padding: var(--spacing-sm) var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-md);
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
     transition: all var(--transition-normal);
     white-space: nowrap;
     align-self: flex-end;
+    min-width: fit-content;
+    width: 20%;
+    height: 20px;
 }
 
 .btn-reset-fechas:hover {
@@ -1262,6 +1267,7 @@ background: rgba(128, 128, 128, 0.2);
     font-weight: 700;
     color: var(--gray-900);
     margin-bottom: var(--spacing-xs);
+    text-align: center;
 }
 
 .kpi-trend {
@@ -2252,7 +2258,7 @@ background: rgba(128, 128, 128, 0.2);
 .kpi-value {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     position: relative;
 }
 
@@ -2303,22 +2309,59 @@ background: rgba(128, 128, 128, 0.2);
     }
 }
 
-/* Panel Sections - 100% ancho con elementos idénticos */
+/* Panel Sections - Layout separado por tipo de tarjeta */
 .panel-section {
     background: var(--bg-card);
     border-radius: var(--border-radius);
-    padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
+    padding: 10px;
+    margin: 0;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-dark);
     transition: all var(--transition-normal);
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
 }
 
 .panel-section:hover {
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
     background: var(--bg-card-hover);
+}
+
+/* Contenedor para tarjetas tipo valor - primera fila */
+.panel-section .valor-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    width: 100%;
+    justify-content: flex-start;
+}
+
+/* Contenedor para tarjetas tipo evolutivo - segunda fila */
+.panel-section .evolutivo-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    width: 100%;
+    justify-content: flex-start;
+    margin-top: var(--spacing-xs);
+}
+
+/* KPIs tipo valor en panel-section */
+.panel-section .kpi-card.valor {
+    width: 22% !important;
+    min-width: 100px;
+    flex: 0 0 auto;
+}
+
+/* KPIs tipo evolutivo en panel-section */
+.panel-section .kpi-card.evolutivo {
+    width: 31% !important;
+    min-width: 260px;
+    height: 200px !important;
+    flex: 0 0 auto;
 }
 
 .panel-title {
@@ -2338,41 +2381,43 @@ background: rgba(128, 128, 128, 0.2);
     opacity: 0.8;
 }
 
-/* KPIs Grid por Panel - 100% ancho con elementos idénticos */
+/* KPIs Grid por Panel - Layout restaurado y mejorado */
 .panel-section .kpis-grid {
-    display: grid;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
     width: 100%;
-    gap: var(--spacing-md);
 }
 
-/* Panel 1: Estado del Sistema - 6 KPIs iguales */
-.panel-section:nth-of-type(1) .kpis-grid {
-    grid-template-columns: repeat(6, 1fr);
+/* Tarjetas valor - primera fila */
+.panel-section .kpis-grid .kpi-card.valor {
+    width: 22% !important;
+    min-width: 100px;
+    margin-bottom: var(--spacing-xs);
 }
 
-/* Panel 2: Producción - 3 gráficos iguales */
-.panel-section:nth-of-type(2) .kpis-grid {
-    grid-template-columns: repeat(3, 1fr);
+/* Tarjetas evolutivas - segunda fila (nueva línea) */
+.panel-section .kpis-grid .kpi-card.evolutivo {
+    width: 31% !important;
+    min-width: 260px;
+    height: 200px !important;
+    margin-top: var(--spacing-xs);
+    flex-basis: 31%;
 }
 
-/* Panel 3: Alimentación - 2 KPIs + 2 gráficos (2x2) */
-.panel-section:nth-of-type(3) .kpis-grid {
-    grid-template-columns: repeat(4, 1fr);
+/* Forzar salto de línea después de las tarjetas valor */
+.panel-section .kpis-grid::after {
+    content: '';
+    width: 100%;
+    order: 1;
 }
 
-/* Panel 4: Calidad - 1 KPI + 1 gráfico (2 columnas) */
-.panel-section:nth-of-type(4) .kpis-grid {
-    grid-template-columns: repeat(2, 1fr);
+.panel-section .kpis-grid .kpi-card.valor {
+    order: 0;
 }
 
-/* Panel 5: Económico - 4 KPIs iguales */
-.panel-section:nth-of-type(5) .kpis-grid {
-    grid-template-columns: repeat(4, 1fr);
-}
-
-/* Panel 6: Inventario - tabla 100% */
-.panel-section:nth-of-type(6) .kpis-grid {
-    grid-template-columns: 1fr;
+.panel-section .kpis-grid .kpi-card.evolutivo {
+    order: 2;
 }
 
 .panel-section:nth-of-type(6) .inventory-table {
@@ -2747,4 +2792,526 @@ background: rgba(128, 128, 128, 0.2);
 
 .info-card:nth-child(4) {
     animation-delay: 0.3s;
+}
+
+/* Estilos del Módulo de Inventario - Tema Oscuro consistente con Dashboard */
+.inventario-container {
+    background: var(--bg-dark);
+    padding: var(--spacing-md);
+    max-width: 1400px;
+    margin: 0 auto;
+    font-family: var(--font-family);
+    color: var(--text-primary);
+}
+
+.inventario-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.inventario-title {
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.inventario-title::before {
+    content: "📦";
+    font-size: 2.5rem;
+    -webkit-text-fill-color: initial;
+    background-clip: initial;
+}
+
+.inventario-controls {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.control-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.control-group select,
+.control-group input {
+    padding: 8px 12px;
+    border: 1px solid var(--border-dark);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: var(--bg-card);
+    color: var(--text-primary);
+}
+
+.control-group select:focus,
+.control-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.kpi-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-dark);
+    transition: all 0.3s ease;
+}
+
+.kpi-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: var(--primary-color);
+}
+
+.kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.kpi-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.kpi-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.kpi-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+    text-align: center;
+}
+
+.kpi-trend {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    justify-content: center;
+}
+
+.trend-up {
+    color: var(--success-color);
+}
+
+.trend-down {
+    color: var(--danger-color);
+}
+
+.trend-neutral {
+    color: var(--text-muted);
+}
+
+.charts-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.chart-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-dark);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.chart-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.chart-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.chart-control {
+    padding: 6px 12px;
+    border: 1px solid var(--border-dark);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chart-control:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.chart-control.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    background: var(--bg-valor);
+    border-radius: 8px;
+    padding: 10px;
+}
+
+.alerts-section {
+    margin-bottom: 30px;
+}
+
+.alerts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.alerts-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.alerts-title::before {
+    content: "🚨";
+}
+
+.alerts-grid {
+    display: grid;
+    gap: 15px;
+}
+
+.alert-card {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: 15px;
+    border-left: 4px solid;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-dark);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+.alert-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.alert-critical {
+    border-left-color: var(--danger-color);
+}
+
+.alert-warning {
+    border-left-color: var(--warning-color);
+}
+
+.alert-info {
+    border-left-color: var(--info-color);
+}
+
+.alert-content {
+    flex: 1;
+}
+
+.alert-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.alert-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.alert-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.alert-action {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.alert-action-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.alert-action-primary:hover {
+    background: var(--primary-dark);
+}
+
+.alert-action-secondary {
+    background: var(--bg-valor);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-dark);
+}
+
+.alert-action-secondary:hover {
+    background: var(--bg-valor-hover);
+    color: var(--text-primary);
+}
+
+.forecast-section {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-dark);
+    margin-bottom: 30px;
+}
+
+.forecast-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.forecast-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.forecast-title::before {
+    content: "📈";
+}
+
+.forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.forecast-item {
+    padding: 15px;
+    border: 1px solid var(--border-dark);
+    border-radius: var(--border-radius);
+    background: var(--bg-valor);
+    transition: all 0.3s ease;
+}
+
+.forecast-item:hover {
+    background: var(--bg-valor-hover);
+    transform: translateY(-1px);
+}
+
+.forecast-item-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.forecast-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.forecast-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.inventory-table-section {
+    background: var(--bg-card);
+    border-radius: var(--border-radius);
+    padding: 25px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border-dark);
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.table-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.table-title::before {
+    content: "📋";
+}
+
+.inventory-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.inventory-table th {
+    background: var(--bg-valor);
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-dark);
+}
+
+.inventory-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border-dark);
+    color: var(--text-primary);
+}
+
+.inventory-table tr:hover {
+    background: var(--bg-valor-hover);
+}
+
+.stock-status {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.stock-critical {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.stock-warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+
+.stock-good {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.action-btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+}
+
+.action-btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.action-btn-primary:hover {
+    background: var(--primary-dark);
+}
+
+.action-btn-secondary {
+    background: var(--bg-valor);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-dark);
+}
+
+.action-btn-secondary:hover {
+    background: var(--bg-valor-hover);
+    color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+    .inventario-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .charts-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .kpi-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .forecast-grid {
+        grid-template-columns: 1fr;
+    }
 }

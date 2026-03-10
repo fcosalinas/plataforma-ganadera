@@ -73,6 +73,14 @@ class PlataformaGanadera {
             }
             
             try {
+                console.log('📦 Creando InventarioModule...');
+                this.modules.inventario = new InventarioModule();
+                console.log('📦 InventarioModule creado');
+            } catch (error) {
+                console.warn('⚠️ InventarioModule no disponible:', error.message);
+            }
+            
+            try {
                 console.log('📦 Creando HistorialModule...');
                 this.modules.historial = new HistorialModule();
                 console.log('📦 HistorialModule creado');
@@ -100,23 +108,50 @@ class PlataformaGanadera {
     }
 
     setupNavigation() {
-        const navButtons = document.querySelectorAll('.nav-btn');
-        navButtons.forEach(btn => {
+        // Configurar botones de navegación rápida
+        const quickNavButtons = document.querySelectorAll('.quick-nav-btn');
+        quickNavButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const section = e.target.dataset.section;
-                this.switchSection(section);
+                const target = e.target.closest('.quick-nav-btn').dataset.target;
+                this.quickNavigate(target);
             });
         });
     }
 
+    quickNavigate(target) {
+        console.log(`🚀 Navegación rápida a: ${target}`);
+        
+        // Cambiar a la sección
+        this.switchSection(target);
+        
+        // Hacer scroll suave al inicio de la sección
+        const targetSection = document.getElementById(target);
+        if (targetSection) {
+            targetSection.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+        
+        // Actualizar botón activo de navegación rápida
+        this.updateQuickNavActive(target);
+    }
+
+    updateQuickNavActive(target) {
+        // Quitar clase active de todos los botones de navegación rápida
+        document.querySelectorAll('.quick-nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Agregar clase active al botón correspondiente
+        const activeBtn = document.querySelector(`.quick-nav-btn[data-target="${target}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
+    }
+
     async switchSection(section) {
         try {
-            // Actualizar botones de navegación
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelector(`[data-section="${section}"]`).classList.add('active');
-
             // Ocultar todas las secciones
             document.querySelectorAll('.section').forEach(sec => {
                 sec.classList.remove('active');
@@ -130,8 +165,16 @@ class PlataformaGanadera {
             
             // Inicializar módulo específico
             if (this.modules[section]) {
-                await this.modules[section].init();
+                if (section === 'inventario') {
+                    // Para inventario, usar reinit para asegurar que los gráficos se inicialicen correctamente
+                    await this.modules[section].reinit();
+                } else {
+                    await this.modules[section].init();
+                }
             }
+
+            // Actualizar botones de navegación rápida
+            this.updateQuickNavActive(section);
 
             this.currentSection = section;
         } catch (error) {
