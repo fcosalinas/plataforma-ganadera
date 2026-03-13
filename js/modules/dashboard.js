@@ -54,88 +54,71 @@ class DashboardModule {
             
         } catch (error) {
             console.error('❌ Error cargando datos de MongoDB:', error.message);
-            // Cargar datos de prueba si falla la API
-            this.cargarDatosPrueba();
+            // No cargar datos de prueba - mostrar error real
+            this.mostrarErrorConexion(error.message);
         }
     }
 
     /**
-     * Cargar datos de prueba
+     * Mostrar error de conexión a MongoDB
+     */
+    mostrarErrorConexion(error) {
+        console.error('❌ Error de conexión a MongoDB:', error);
+        
+        // Mostrar mensaje de error en el dashboard
+        const dashboardContainer = document.querySelector('.dashboard-grid');
+        if (dashboardContainer) {
+            dashboardContainer.innerHTML = `
+                <div class="error-container">
+                    <div class="error-icon">🔴</div>
+                    <h3>Error de Conexión a MongoDB</h3>
+                    <p>No se pudieron cargar los datos reales de la base de datos.</p>
+                    <div class="error-details">
+                        <strong>Error:</strong> ${error}
+                    </div>
+                    <div class="error-actions">
+                        <button class="btn btn-primary" onclick="location.reload()">
+                            🔄 Reintentar Conexión
+                        </button>
+                        <button class="btn btn-secondary" onclick="window.open('/api', '_blank')">
+                            🔍 Ver Estado API
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Deshabilitar botones de datos de prueba
+        const botonPrueba = document.querySelector('button[onclick="cargarDatosPrueba()"]');
+        if (botonPrueba) {
+            botonPrueba.disabled = true;
+            botonPrueba.textContent = '🚫 Datos de Prueba Desactivados';
+            botonPrueba.title = 'Para usar datos de prueba, configura manualmente el sistema';
+        }
+    }
+
+    /**
+     * Cargar datos de prueba - DESACTIVADO
      */
     cargarDatosPrueba() {
-        console.log('🧪 Cargando datos de prueba...');
-        
-        // Primero cargar datos del sistema data-test.js
-        if (window.dataTest && window.dataTest.cargarDatosPrueba) {
-            console.log('🔄 Cargando datos reales con data-test.js');
-            window.dataTest.cargarDatosPrueba();
-            
-            // Esperar a que se carguen los datos
-            setTimeout(() => {
-                if (window.datos && window.datos.length > 0) {
-                    console.log(`✅ Datos reales cargados: ${window.datos.length} registros`);
-                    console.log('📋 Muestra de datos:', window.datos.slice(0, 1)[0]);
-                    this.datosOriginales = window.datos;
-                    
-                    // Aplicar filtros actuales
-                    this.actualizarDashboard(window.datos);
-                } else {
-                    console.log('⚠️ No se cargaron datos, usando fallback');
-                    this.cargarDatosFallback();
-                }
-            }, 200);
-            return;
-        }
-        
-        this.cargarDatosFallback();
+        console.warn('🚫 Datos de prueba desactivados. Solo se permiten datos reales de MongoDB.');
+        this.mostrarErrorConexion('Los datos de prueba están desactivados. Configure la conexión a MongoDB.');
     }
 
     /**
-     * Cargar datos fallback propios
+     * Cargar datos fallback - DESACTIVADO
      */
     cargarDatosFallback() {
-        console.log('⚠️ Usando datos propios de fallback');
-        const datosPrueba = this.generarDatosPrueba();
-        this.datosOriginales = datosPrueba;
-        this.actualizarDashboard(datosPrueba);
+        console.warn('🚫 Datos fallback desactivados. Solo se permiten datos reales de MongoDB.');
+        this.mostrarErrorConexion('Los datos fallback están desactivados. Configure la conexión a MongoDB.');
     }
 
     /**
-     * Generar datos de prueba
+     * Generar datos de prueba - DESACTIVADO
      */
     generarDatosPrueba() {
-        const datos = [];
-        const fechaInicio = new Date('2026-01-28');
-        
-        for (let i = 0; i < 30; i++) {
-            const fecha = new Date(fechaInicio);
-            fecha.setDate(fecha.getDate() + i);
-            
-            datos.push({
-                fecha: fecha.toISOString(),
-                produccion: {
-                    litros: 2500 + Math.random() * 1000,
-                    grasa: 3.5 + Math.random() * 0.5,
-                    proteina: 3.2 + Math.random() * 0.4
-                },
-                vacas: {
-                    estanque: 120 + Math.floor(Math.random() * 20),
-                    total: 150
-                },
-                alimentacion: {
-                    concentrado: 1000 + Math.random() * 300,
-                    ensilaje: 2000 + Math.random() * 500
-                },
-                economia: {
-                    costo_alimentacion: 800 + Math.random() * 200
-                },
-                fundo: {
-                    nombre: Math.random() > 0.5 ? 'Agricola A' : 'Agricola B'
-                }
-            });
-        }
-        
-        return datos;
+        console.warn('🚫 Generación de datos de prueba desactivada.');
+        return [];
     }
 
     /**
