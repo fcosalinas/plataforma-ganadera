@@ -1,6 +1,7 @@
 services:
+  # Frontend - Sitio Estático
   - type: web
-    name: plataforma-ganadera
+    name: plataforma-ganadera-frontend
     env: static
     buildCommand: ""
     staticPublishPath: .
@@ -8,3 +9,23 @@ services:
       - type: rewrite
         src: /.*
         dest: /index.html
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+  # Backend - API Node.js
+  - type: web
+    name: plataforma-gestion-lechera
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Estas variables deben configurarse en el dashboard de Render
+      - key: MONGODB_URI
+        sync: false
+      - key: FRONTEND_URL
+        value: https://plataforma-ganadera-frontend.onrender.com
