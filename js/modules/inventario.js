@@ -18,23 +18,26 @@ class InventarioModule {
         this.init();
     }
 
-    init() {
+    async init() {
         console.log('📦 Módulo de Inventario inicializado');
         
         // Verificar si estamos en la sección de inventario
         if (!document.getElementById('inventarioEvolutionChart')) {
             console.log('⚠️ Elementos de inventario no encontrados, esperando a que la sección esté activa');
+            console.log('🔍 Elementos disponibles:', document.querySelectorAll('canvas').length);
             return;
         }
         
-        this.cargarDatos();
+        console.log('✅ Elementos de inventario encontrados, procediendo con la inicialización');
+        await this.cargarDatos();
         this.configurarEventListeners();
         this.inicializarGraficos();
         this.actualizarDashboard();
+        console.log('✅ Inventario inicializado completamente');
     }
 
     // Método para reinicializar cuando la sección se activa
-    reinit() {
+    async reinit() {
         console.log('🔄 Reinicializando módulo de inventario');
         
         // Destruir gráficos existentes
@@ -46,20 +49,70 @@ class InventarioModule {
         this.charts = {};
         
         // Reinicializar
-        this.init();
+        await this.init();
     }
 
-    cargarDatos() {
-        // Simular datos de inventario para 7 fundos
-        this.datos = this.generarDatosInventario();
-        console.log(`📊 Cargados ${this.datos.length} registros de inventario`);
-        
-        // Mostrar muestra de datos para depuración
-        if (this.datos.length > 0) {
-            console.log('📋 Muestra de datos:', this.datos.slice(0, 3));
-            console.log('🏭 Fundos únicos:', [...new Set(this.datos.map(d => d.fundo))]);
-            console.log('📦 Productos únicos:', [...new Set(this.datos.map(d => d.producto))]);
-            console.log('📅 Fechas únicas:', [...new Set(this.datos.map(d => d.fecha))].slice(0, 5));
+    async cargarDatos() {
+        try {
+            console.log('🔄 Cargando datos de inventario desde MongoDB...');
+            
+            // Cargar datos de inventario desde la API
+            const response = await fetch('http://localhost:3000/api/inventario');
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            // Validar que los datos sean válidos
+            if (!result.success || !Array.isArray(result.data)) {
+                throw new Error('La API no devolvió datos válidos de inventario');
+            }
+            
+            this.datos = result.data;
+            console.log(`✅ Datos reales de inventario cargados: ${this.datos.length} registros`);
+            
+            // Mostrar muestra de datos para depuración
+            if (this.datos.length > 0) {
+                console.log('📋 Muestra completa de datos reales:', this.datos.slice(0, 2));
+                console.log('🏭 Fundos únicos:', [...new Set(this.datos.map(d => d.fundo?.nombre || d.fundo))]);
+                console.log('📦 Productos únicos:', [...new Set(this.datos.map(d => d.producto?.nombre || d.producto))]);
+                console.log('📅 Fechas únicas:', [...new Set(this.datos.map(d => d.fecha))].slice(0, 5));
+                
+                // Analizar estructura de campos disponibles
+                console.log('🔍 Análisis de campos disponibles:');
+                const muestra = this.datos[0];
+                Object.keys(muestra).forEach(key => {
+                    console.log(`  • ${key}:`, muestra[key]);
+                });
+                
+                // Verificar campos específicos para inventario-moderno
+                console.log('📊 Verificación de campos necesarios:');
+                this.datos.slice(0, 3).forEach((d, i) => {
+                    console.log(`Registro ${i + 1}:`);
+                    console.log(`  - stockActual: ${d.stockActual || '❌ NO EXISTE'}`);
+                    console.log(`  - consumoDiario: ${d.consumoDiario || '❌ NO EXISTE'}`);
+                    console.log(`  - stockMinimo: ${d.stockMinimo || '❌ NO EXISTE'}`);
+                    console.log(`  - stockOptimo: ${d.stockOptimo || '❌ NO EXISTE'}`);
+                    console.log(`  - producto: ${d.producto?.nombre || d.producto || '❌ NO EXISTE'}`);
+                });
+            }
+            
+        } catch (error) {
+            console.error('❌ Error cargando datos de inventario:', error.message);
+            // Fallback a datos simulados si falla la API
+            console.log('⚠️ Usando datos simulados de inventario');
+            this.datos = this.generarDatosInventario();
+            console.log(`📊 Cargados ${this.datos.length} registros de inventario simulados`);
+            
+            // Mostrar muestra de datos para depuración
+            if (this.datos.length > 0) {
+                console.log('📋 Muestra de datos simulados:', this.datos.slice(0, 3));
+                console.log('🏭 Fundos únicos:', [...new Set(this.datos.map(d => d.fundo))]);
+                console.log('📦 Productos únicos:', [...new Set(this.datos.map(d => d.producto))]);
+                console.log('📅 Fechas únicas:', [...new Set(this.datos.map(d => d.fecha))].slice(0, 5));
+            }
         }
     }
 
@@ -206,25 +259,48 @@ class InventarioModule {
     }
 
     filtrarDatos() {
+        console.log('🔍 Filtrando datos de inventario...');
         let datosFiltrados = [...this.datos];
         
         // Filtrar por fundo
         if (this.filtroActual.fundo !== 'todos') {
-            datosFiltrados = datosFiltrados.filter(d => d.fundo === this.filtroActual.fundo);
+            datosFiltrados = datosFiltrados.filter(d => {
+                const nombreFundo = d.fundo?.nombre || d.fundo || '';
+                return nombreFundo === this.filtroActual.fundo;
+            });
+            console.log(`🏭 Filtrado por fundo "${this.filtroActual.fundo}": ${datosFiltrados.length} registros`);
         }
         
         // Filtrar por producto
         if (this.filtroActual.producto !== 'todos') {
-            datosFiltrados = datosFiltrados.filter(d => d.producto === this.filtroActual.producto);
+            datosFiltrados = datosFiltrados.filter(d => {
+                const nombreProducto = d.producto?.nombre || d.producto || '';
+                return nombreProducto === this.filtroActual.producto;
+            });
+            console.log(`📦 Filtrado por producto "${this.filtroActual.producto}": ${datosFiltrados.length} registros`);
         }
         
-        // Filtrar por período
+        // Filtrar por período (solo si las fechas son válidas)
         const dias = this.getDiasPeriodo(this.filtroActual.periodo);
         const fechaLimite = new Date();
         fechaLimite.setDate(fechaLimite.getDate() - dias);
         
-        datosFiltrados = datosFiltrados.filter(d => new Date(d.fecha) >= fechaLimite);
+        // Solo filtrar por fecha si los registros tienen fechas válidas
+        const datosConFecha = datosFiltrados.filter(d => d.fecha && d.fecha !== 'undefined');
+        const datosSinFecha = datosFiltrados.filter(d => !d.fecha || d.fecha === 'undefined');
         
+        if (datosConFecha.length > 0) {
+            datosConFecha.forEach(d => {
+                console.log(`📅 Registro con fecha: ${d.fundo?.nombre || d.fundo} - ${d.fecha}`);
+            });
+            datosFiltrados = datosConFecha.filter(d => new Date(d.fecha) >= fechaLimite);
+            console.log(`📅 Filtrado por período (${dias} días): ${datosFiltrados.length} registros`);
+        } else {
+            console.log(`⚠️ No hay registros con fechas válidas, usando todos los ${datosSinFecha.length} registros`);
+            datosFiltrados = datosSinFecha;
+        }
+        
+        console.log(`✅ Filtrado completado: ${datosFiltrados.length} registros finales`);
         return datosFiltrados;
     }
 
@@ -240,13 +316,21 @@ class InventarioModule {
 
     actualizarDashboard() {
         console.log('🔄 Actualizando dashboard de inventario');
+        console.log(`📊 Datos disponibles: ${this.datos.length} registros`);
         
         const datosFiltrados = this.filtrarDatos();
+        console.log(`🔍 Datos filtrados: ${datosFiltrados.length} registros`);
+        
         this.actualizarKPIs(datosFiltrados);
         this.actualizarAlertas(datosFiltrados);
         this.actualizarGraficos(datosFiltrados);
         this.actualizarPronosticos(datosFiltrados);
         this.actualizarTabla(datosFiltrados);
+        
+        // Actualizar la sección inventario-moderno
+        this.actualizarInventarioModerno(datosFiltrados);
+        
+        console.log('✅ Dashboard de inventario actualizado');
     }
 
     actualizarKPIs(datos) {
@@ -340,73 +424,391 @@ class InventarioModule {
 
     actualizarAlertas(datos) {
         console.log('🚨 Actualizando alertas de inventario');
+        console.log(`📊 Datos para alertas: ${datos.length} registros`);
         
         this.alertas = this.generarAlertas(datos);
+        console.log(`🔥 Alertas generadas: ${this.alertas.length}`);
+        this.alertas.forEach((alerta, i) => {
+            console.log(`  ${i+1}. [${alerta.tipo}] ${alerta.titulo}`);
+        });
+        
         this.renderizarAlertas();
     }
 
     generarAlertas(datos) {
         const alertas = [];
-        const datosHoy = datos.filter(d => d.fecha === datos[datos.length - 1]?.fecha);
         
-        datosHoy.forEach(d => {
-            // Alerta de stock crítico
-            if (d.stockActual < d.stockMinimo) {
-                alertas.push({
-                    tipo: 'critical',
-                    titulo: `🚨 Stock Crítico - ${d.productoNombre} ${d.fundoNombre}`,
-                    descripcion: `Quedan ${(d.stockActual / d.consumoDiario).toFixed(1)} días de stock. Nivel actual: ${d.stockActual.toFixed(0)}kg vs consumo diario: ${d.consumoDiario.toFixed(0)}kg. Pedido urgente necesario.`,
-                    acciones: ['Generar Pedido', 'Ver Detalles']
-                });
-            }
+        try {
+            // Agrupar datos por producto para el estado más reciente
+            const datosPorProducto = {};
+            datos.forEach(d => {
+                const producto = d.producto || 'desconocido';
+                if (!datosPorProducto[producto]) {
+                    datosPorProducto[producto] = d;
+                }
+            });
             
-            // Alerta de merma elevada
-            if (d.merma > 0.05) {
-                alertas.push({
-                    tipo: 'warning',
-                    titulo: `⚠️ Merma Elevada - ${d.productoNombre} ${d.fundoNombre}`,
-                    descripcion: `Merma del ${(d.merma * 100).toFixed(1)}% supera el umbral del 5%. Revisar condiciones de almacenamiento.`,
-                    acciones: ['Investigar', 'Ver Histórico']
-                });
-            }
+            Object.values(datosPorProducto).forEach(d => {
+                const stockActual = d.cantidad_actual || 0;
+                const consumoDiario = d.consumo_diario_promedio || 0;
+                const diasStock = d.dias_stock || 0;
+                const stockMinimo = d.alerta_minimo || 0;
+                
+                // Alerta de stock crítico
+                if (diasStock < 3 || stockActual < stockMinimo) {
+                    alertas.push({
+                        tipo: 'critical',
+                        titulo: `🚨 Stock Crítico - ${d.producto}`,
+                        descripcion: `Quedan ${diasStock.toFixed(1)} días de stock. Nivel actual: ${stockActual.toFixed(0)}kg vs consumo diario: ${consumoDiario.toFixed(0)}kg. Pedido urgente necesario.`,
+                        acciones: ['Generar Pedido', 'Ver Detalles'],
+                        producto: d.producto,
+                        fundo: d.fundo?.nombre || 'N/A'
+                    });
+                }
+                
+                // Alerta de stock bajo
+                else if (diasStock < 7) {
+                    alertas.push({
+                        tipo: 'warning',
+                        titulo: `⚠️ Stock Bajo - ${d.producto}`,
+                        descripcion: `Quedan ${diasStock.toFixed(1)} días de stock. Nivel actual: ${stockActual.toFixed(0)}kg. Considerar reabastecimiento pronto.`,
+                        acciones: ['Programar Pedido', 'Ver Histórico'],
+                        producto: d.producto,
+                        fundo: d.fundo?.nombre || 'N/A'
+                    });
+                }
+                
+                // Alerta de oportunidad de compra
+                if (diasStock > 60) {
+                    alertas.push({
+                        tipo: 'info',
+                        titulo: `📈 Oportunidad - ${d.producto}`,
+                        descripcion: `Stock elevado (${diasStock.toFixed(1)} días). Considerar negociar mejores precios o reducir inventario.`,
+                        acciones: ['Optimizar', 'Mantener'],
+                        producto: d.producto,
+                        fundo: d.fundo?.nombre || 'N/A'
+                    });
+                }
+                
+                // Alerta de consumo inusual
+                if (consumoDiario > 0) {
+                    const consumoEsperado = stockMinimo * 0.3; // Estimar consumo esperado
+                    if (consumoDiario > consumoEsperado * 1.5) {
+                        alertas.push({
+                            tipo: 'warning',
+                            titulo: `📊 Consumo Elevado - ${d.producto}`,
+                            descripcion: `Consumo diario (${consumoDiario.toFixed(0)}kg) es 50% superior a lo esperado. Revisar eficiencia de alimentación.`,
+                            acciones: ['Analizar', 'Optimizar'],
+                            producto: d.producto,
+                            fundo: d.fundo?.nombre || 'N/A'
+                        });
+                    }
+                }
+                
+                // Alerta de proveedor
+                if (d.fecha_ultima_compra) {
+                    const diasDesdeUltimaCompra = Math.floor((new Date() - new Date(d.fecha_ultima_compra)) / (1000 * 60 * 60 * 24));
+                    if (diasDesdeUltimaCompra > 90) {
+                        alertas.push({
+                            tipo: 'info',
+                            titulo: `📅 Revisión Proveedor - ${d.producto}`,
+                            descripcion: `Hace ${diasDesdeUltimaCompra} días desde la última compra. Considerar evaluar proveedor o negociar mejores condiciones.`,
+                            acciones: ['Evaluar', 'Contactar'],
+                            producto: d.producto,
+                            fundo: d.fundo?.nombre || 'N/A'
+                        });
+                    }
+                }
+            });
             
-            // Alerta de oportunidad
-            if (Math.random() < 0.1) { // 10% de probabilidad
+            // Alerta general de inventario
+            const valorTotal = datos.reduce((total, d) => total + ((d.cantidad_actual || 0) * (d.costo_unitario || 0)), 0);
+            if (valorTotal > 1000000) { // Más de $1M en inventario
                 alertas.push({
                     tipo: 'info',
-                    titulo: `📈 Oportunidad - Compra ${d.productoNombre}`,
-                    descripcion: `Proveedor ofrece 15% descuento por compra mayor a 500kg. Stock actual: ${d.stockActual.toFixed(0)}kg.`,
-                    acciones: ['Evaluar', 'Ignorar']
+                    titulo: '💰 Capital Inmovilizado Elevado',
+                    descripcion: `El valor total del inventario es de $${(valorTotal/1000000).toFixed(1)}M. Considerar optimizar niveles de stock.`,
+                    acciones: ['Optimizar', 'Mantener'],
+                    producto: 'General',
+                    fundo: 'Todos'
                 });
             }
+            
+        } catch (error) {
+            console.warn('⚠️ Error generando alertas:', error.message);
+        }
+        
+        // Ordenar alertas por prioridad (critical > warning > info)
+        alertas.sort((a, b) => {
+            const prioridad = { critical: 3, warning: 2, info: 1 };
+            return prioridad[b.tipo] - prioridad[a.tipo];
         });
         
-        return alertas.slice(0, 3); // Limitar a 3 alertas
+        return alertas.slice(0, 6); // Limitar a 6 alertas más importantes
     }
 
     renderizarAlertas() {
-        const alertsContainer = document.querySelector('.alerts-grid');
-        if (!alertsContainer) return;
+        console.log(`📋 Renderizando ${this.alertas.length} alertas`);
         
+        // Usar el contenedor específico del sidebar
+        const alertsContainer = document.getElementById('alertasContainer');
+        console.log(`🔍 Contenedor #alertasContainer encontrado:`, !!alertsContainer);
+        
+        if (!alertsContainer) {
+            console.log('⚠️ No se encontró contenedor #alertasContainer');
+            // Buscar alternativas
+            console.log('🔍 Buscando contenedores alternativos...');
+            const alternatives = [
+                '.alerts-panel',
+                '.dashboard-sidebar',
+                '#alertasContainer'
+            ];
+            alternatives.forEach(selector => {
+                const element = document.querySelector(selector);
+                console.log(`  • ${selector}:`, !!element);
+            });
+            return;
+        }
+        
+        console.log(`📝 Contenedor encontrado,innerHTML actual:`, alertsContainer.innerHTML.substring(0, 100));
+        
+        // Limpiar alertas existentes
         alertsContainer.innerHTML = '';
         
-        this.alertas.forEach(alerta => {
-            const alertCard = document.createElement('div');
-            alertCard.className = `alert-card alert-${alerta.tipo}`;
-            
-            alertCard.innerHTML = `
-                <div class="alert-content">
-                    <div class="alert-title">${alerta.titulo}</div>
-                    <div class="alert-description">${alerta.descripcion}</div>
+        if (this.alertas.length === 0) {
+            console.log('ℹ️ No hay alertas, mostrando mensaje de estado bueno');
+            alertsContainer.innerHTML = `
+                <div class="alert-item alert-success">
+                    <div class="alert-icon">✅</div>
+                    <div class="alert-content">
+                        <div class="alert-title">Sin Alertas</div>
+                        <div class="alert-description">El inventario está en buen estado</div>
+                    </div>
                 </div>
-                <div class="alert-actions">
-                    <button class="alert-action alert-action-primary">${alerta.acciones[0]}</button>
-                    <button class="alert-action alert-action-secondary">${alerta.acciones[1]}</button>
+            `;
+            return;
+        }
+        
+        console.log(`🎨 Renderizando ${this.alertas.length} alertas...`);
+        
+        // Renderizar cada alerta
+        this.alertas.forEach((alerta, index) => {
+            const alertItem = document.createElement('div');
+            alertItem.className = `alert-item alert-${alerta.tipo}`;
+            alertItem.innerHTML = `
+                <div class="alert-content-wrapper">
+                    <div class="alert-header">
+                        <div class="alert-info">
+                            <div class="alert-title">${alerta.titulo}</div>
+                            <div class="alert-description">${alerta.descripcion}</div>
+                            <div class="alert-meta">
+                                <span class="alert-product">📦 ${alerta.producto}</span>
+                                <span class="alert-fundo">🏭 ${alerta.fundo}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="alert-actions">
+                        ${alerta.acciones.slice(0, 2).map((accion, i) => `
+                            <button class="btn btn-${this.getButtonType(alerta.tipo, i)} btn-sm" 
+                                    onclick="window.plataforma.modules.inventario.handleAlertAction('${accion}', '${alerta.producto}', '${alerta.fundo}')">
+                                <i class="fas ${this.getButtonIcon(accion)}"></i>
+                                ${accion}
+                            </button>
+                        `).join('')}
+                    </div>
                 </div>
             `;
             
-            alertsContainer.appendChild(alertCard);
+            alertsContainer.appendChild(alertItem);
+            console.log(`✅ Alerta ${index + 1} agregada: ${alerta.titulo}`);
         });
+        
+        console.log(`✅ Alertas renderizadas. NuevoinnerHTML:`, alertsContainer.innerHTML.substring(0, 200));
+        console.log('✅ Alertas renderizadas correctamente en sidebar');
+    }
+    
+    getAlertIcon(tipo) {
+        const icons = {
+            critical: '🚨',
+            warning: '⚠️',
+            info: 'ℹ️'
+        };
+        return icons[tipo] || '📢';
+    }
+    
+    getButtonType(alertType, buttonIndex) {
+        // Primer botón (acción principal) usa el tipo de alerta
+        // Segundo botón (acción secundaria) usa outline
+        if (buttonIndex === 0) {
+            const types = {
+                critical: 'danger',
+                warning: 'warning',
+                info: 'info'
+            };
+            return types[alertType] || 'primary';
+        } else {
+            return 'outline-secondary';
+        }
+    }
+    
+    getButtonIcon(action) {
+        const icons = {
+            'Generar Pedido': 'fa-shopping-cart',
+            'Ver Detalles': 'fa-eye',
+            'Programar Pedido': 'fa-calendar-plus',
+            'Ver Histórico': 'fa-history',
+            'Optimizar': 'fa-chart-line',
+            'Mantener': 'fa-check',
+            'Analizar': 'fa-search',
+            'Evaluar': 'fa-clipboard-check',
+            'Contactar': 'fa-phone'
+        };
+        return icons[action] || 'fa-cog';
+    }
+    
+    handleAlertAction(action, producto, fundo) {
+        console.log(`🔔 Acción de alerta: ${action} - Producto: ${producto} - Fundo: ${fundo}`);
+        
+        // Aquí puedes implementar las acciones específicas
+        switch(action) {
+            case 'Generar Pedido':
+                this.generarPedido(producto, fundo);
+                break;
+            case 'Ver Detalles':
+                this.verDetallesProducto(producto, fundo);
+                break;
+            case 'Programar Pedido':
+                this.programarPedido(producto, fundo);
+                break;
+            case 'Optimizar':
+                this.optimizarInventario(producto, fundo);
+                break;
+            case 'Analizar':
+                this.analizarConsumo(producto, fundo);
+                break;
+            default:
+                console.log(`Acción "${action}" no implementada aún`);
+        }
+    }
+    
+    generarPedido(producto, fundo) {
+        console.log(`� Generando pedido para ${producto} en ${fundo}`);
+        // Implementar lógica de generación de pedido
+        alert(`Generando pedido automático para ${producto} en ${fundo}`);
+    }
+    
+    verDetallesProducto(producto, fundo) {
+        console.log(`🔍 Viendo detalles de ${producto} en ${fundo}`);
+        // Implementar vista de detalles
+        alert(`Mostrando detalles de ${producto} en ${fundo}`);
+    }
+    
+    programarPedido(producto, fundo) {
+        console.log(`📅 Programando pedido para ${producto} en ${fundo}`);
+        alert(`Programando pedido para ${producto} en ${fundo}`);
+    }
+    
+    optimizarInventario(producto, fundo) {
+        console.log(`⚡ Optimizando inventario de ${producto} en ${fundo}`);
+        alert(`Optimizando niveles de inventario para ${producto} en ${fundo}`);
+    }
+    
+    analizarConsumo(producto, fundo) {
+        console.log(`📊 Analizando consumo de ${producto} en ${fundo}`);
+        alert(`Analizando patrones de consumo para ${producto} en ${fundo}`);
+    }
+
+    /**
+     * Actualizar la sección inventario-moderno con datos reales
+     */
+    actualizarInventarioModerno(datos) {
+        console.log('🔄 Actualizando sección inventario-moderno...');
+        
+        // Agrupar datos por producto
+        const datosPorProducto = {};
+        datos.forEach(d => {
+            const producto = d.producto?.nombre || d.producto || 'desconocido';
+            if (!datosPorProducto[producto]) {
+                datosPorProducto[producto] = d;
+            }
+        });
+        
+        // Actualizar cada producto
+        const productos = ['concentrado', 'ensilaje', 'sales', 'fibra'];
+        
+        productos.forEach(producto => {
+            const datosProducto = datosPorProducto[producto];
+            if (datosProducto) {
+                this.actualizarProductoInventario(producto, datosProducto);
+            } else {
+                console.log(`⚠️ No hay datos para producto: ${producto}`);
+            }
+        });
+        
+        console.log('✅ Sección inventario-moderno actualizada');
+    }
+
+    /**
+     * Actualizar un producto específico en inventario-moderno
+     */
+    actualizarProductoInventario(producto, datos) {
+        // Usar los campos reales de la base de datos
+        const stockActual = datos.cantidad_actual || 0;
+        const consumoDiario = datos.consumo_diario_promedio || 0;
+        const diasDisponibles = datos.dias_stock || 0;
+        const stockMinimo = datos.alerta_minimo || 0;
+        const stockOptimo = stockMinimo * 2; // Estimar óptimo como 2x el mínimo
+        
+        // Calcular progreso (porcentaje respecto al nivel óptimo)
+        const progreso = stockOptimo > 0 ? Math.min((stockActual / stockOptimo) * 100, 100) : 0;
+        
+        // Determinar estado
+        let estado = 'status-critical';
+        let estadoTexto = '🔴 Crítico';
+        
+        if (diasDisponibles > 30) {
+            estado = 'status-good';
+            estadoTexto = '🟢 Óptimo';
+        } else if (diasDisponibles > 7) {
+            estado = 'status-medium';
+            estadoTexto = '🟡 Medio';
+        }
+        
+        // Mapear nombres de productos para los IDs
+        const productoMap = {
+            'concentrado': 'Concentrado',
+            'ensilaje': 'Ensilaje',
+            'sales': 'Sales',
+            'fibra': 'Fibra'
+        };
+        
+        const productoId = productoMap[producto] || producto.charAt(0).toUpperCase() + producto.slice(1);
+        
+        // Actualizar DOM
+        this.actualizarElemento(`stock${productoId}`, `${stockActual.toFixed(0)} kg`);
+        this.actualizarElemento(`consumo${productoId}`, `${consumoDiario.toFixed(0)} kg`);
+        this.actualizarElemento(`dias${productoId}`, `${diasDisponibles.toFixed(1)} días`);
+        this.actualizarElemento(`status${productoId}`, estadoTexto);
+        
+        // Actualizar barra de progreso
+        const progressBar = document.getElementById(`progress${productoId}`);
+        if (progressBar) {
+            progressBar.style.width = `${progreso}%`;
+        }
+        
+        console.log(`✅ Producto ${producto} actualizado: ${stockActual}kg, ${diasDisponibles.toFixed(1)} días (${estadoTexto})`);
+    }
+
+    /**
+     * Actualizar elemento DOM de forma segura
+     */
+    actualizarElemento(id, valor) {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            elemento.textContent = valor;
+        } else {
+            console.warn(`⚠️ Elemento no encontrado: ${id}`);
+        }
     }
 
     inicializarGraficos() {
@@ -417,6 +819,8 @@ class InventarioModule {
         this.inicializarGraficoDistribucion();
         this.inicializarGraficoEficiencia();
         this.inicializarGraficoPronostico();
+        
+        console.log('✅ Gráficos de inventario inicializados');
     }
 
     inicializarGraficoEvolucion() {
@@ -1027,27 +1431,53 @@ class InventarioModule {
     actualizarTabla(datos) {
         console.log('📋 Actualizando tabla de inventario');
         
-        const tbody = document.querySelector('.inventory-table tbody');
-        if (!tbody) return;
+        const tablaContainer = document.querySelector('.inventory-table-container');
+        if (!tablaContainer) {
+            console.log('⚠️ Tabla de inventario no encontrada');
+            return;
+        }
         
-        tbody.innerHTML = '';
+        const tabla = tablaContainer.querySelector('table tbody');
+        if (!tabla) {
+            console.log('⚠️ Cuerpo de tabla no encontrado');
+            return;
+        }
         
-        const datosHoy = datos.filter(d => d.fecha === datos[datos.length - 1]?.fecha);
+        // Limpiar tabla
+        tabla.innerHTML = '';
         
-        datosHoy.forEach(d => {
+        if (datos.length === 0) {
+            tabla.innerHTML = '<tr><td colspan="8">No hay datos disponibles</td></tr>';
+            return;
+        }
+        
+        // Agrupar datos por producto para mostrar el más reciente
+        const datosPorProducto = {};
+        datos.forEach(d => {
+            const producto = d.producto || 'desconocido';
+            if (!datosPorProducto[producto]) {
+                datosPorProducto[producto] = d;
+            }
+        });
+        
+        Object.values(datosPorProducto).forEach(d => {
             const row = document.createElement('tr');
-            const diasStock = d.stockActual / d.consumoDiario;
+            
+            // Usar campos reales de la base de datos
+            const stockActual = d.cantidad_actual || 0;
+            const consumoDiario = d.consumo_diario_promedio || 0;
+            const diasStock = consumoDiario > 0 ? stockActual / consumoDiario : 0;
             const estado = this.getEstadoStock(diasStock);
             
             row.innerHTML = `
-                <td><strong>${d.productoNombre}</strong></td>
-                <td>${d.fundoNombre}</td>
-                <td>${d.stockActual.toFixed(0)} kg</td>
-                <td>${d.consumoDiario.toFixed(0)} kg</td>
+                <td><strong>${d.producto || 'N/A'}</strong></td>
+                <td>${d.fundo?.nombre || 'N/A'}</td>
+                <td>${stockActual.toFixed(0)} kg</td>
+                <td>${consumoDiario.toFixed(0)} kg</td>
                 <td>${diasStock.toFixed(1)}</td>
                 <td><span class="stock-status stock-${estado.clase}">${estado.texto}</span></td>
-                <td>${d.ultimoPedido}</td>
-                <td>${diasStock < 3 ? 'Inmediato' : d.proximoPedido}</td>
+                <td>${d.fecha_ultima_compra ? new Date(d.fecha_ultima_compra).toLocaleDateString() : 'N/A'}</td>
+                <td>${diasStock < 3 ? 'Inmediato' : 'Próxima semana'}</td>
                 <td>
                     <div class="action-buttons">
                         <button class="action-btn action-btn-primary">${diasStock < 3 ? 'Urgente' : 'Pedir'}</button>
@@ -1056,8 +1486,10 @@ class InventarioModule {
                 </td>
             `;
             
-            tbody.appendChild(row);
+            tabla.appendChild(row);
         });
+        
+        console.log('✅ Tabla de inventario actualizada');
     }
 
     getEstadoStock(dias) {
