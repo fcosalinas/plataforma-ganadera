@@ -226,12 +226,28 @@ class CargaModule {
                 return;
             }
 
-            // Guardar en storage
-            const guardado = StorageUtils.saveDatos(datos);
+            // Guardar en MongoDB a través de la API
+            const apiURL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? 'http://localhost:3000/api/registros'
+                : 'https://name-plataforma-ganadera-backend.onrender.com/api/registros';
             
-            if (guardado) {
+            const response = await fetch(apiURL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(datos)
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (result.success) {
                 // Mostrar notificación de éxito
-                window.plataforma.mostrarNotificacion('✅ Datos guardados correctamente', 'success');
+                window.plataforma.mostrarNotificacion('✅ Datos guardados correctamente en MongoDB', 'success');
                 
                 // Limpiar formulario
                 this.form.reset();
@@ -245,12 +261,12 @@ class CargaModule {
                     }
                 }, 1000);
             } else {
-                throw new Error('No se pudieron guardar los datos');
+                throw new Error(result.message || 'Error al guardar en la base de datos');
             }
             
         } catch (error) {
             console.error('Error al guardar datos:', error);
-            window.plataforma.mostrarNotificacion('❌ Error al guardar los datos', 'error');
+            window.plataforma.mostrarNotificacion('❌ Error al guardar los datos: ' + error.message, 'error');
         }
     }
 

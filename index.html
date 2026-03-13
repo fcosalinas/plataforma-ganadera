@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/components.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- API Service -->
+    <script src="js/services/apiService.js"></script>
+    <!-- Módulos de la aplicación -->
 </head>
 <body>
     <header class="header">
@@ -958,17 +961,6 @@
         </div>
     </main>
 
-    <!-- Modal para ver detalles -->
-    <div id="modalDetalles" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="plataforma.cerrarModal()">&times;</span>
-            <h2>Detalles del Registro</h2>
-            <div id="detallesContenido">
-                <!-- Los detalles se cargarán dinámicamente -->
-            </div>
-        </div>
-    </div>
-
     <!-- Scripts modulares -->
     <script src="js/utils/storage.js"></script>
     <script src="js/utils/calculations.js"></script>
@@ -976,6 +968,7 @@
     <script src="js/utils/data-generator.js"></script>
     <script src="js/utils/data-loader.js"></script>
     <script src="js/utils/data-test.js"></script>
+    <script src="js/modules/simple-charts.js"></script>
     <script src="js/modules/carga.js"></script>
     <script src="js/modules/dashboard.js"></script>
     <script src="js/modules/tabla.js"></script>

@@ -57,7 +57,11 @@ class InventarioModule {
             console.log('🔄 Cargando datos de inventario desde MongoDB...');
             
             // Cargar datos de inventario desde la API
-            const response = await fetch('http://localhost:3000/api/inventario');
+            const apiURL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? 'http://localhost:3000/api/inventario'
+                : 'https://name-plataforma-ganadera-backend.onrender.com/api/inventario';
+            
+            const response = await fetch(apiURL);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);

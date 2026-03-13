@@ -10,22 +10,29 @@ class PlataformaGanadera {
         try {
             console.log('🚀 Iniciando Plataforma Ganadera...');
             
+            // Verificar conexión con el backend
+            console.log('🔍 Verificando conexión con backend...');
+            const backendStatus = await window.apiService.getBackendStatus();
+            
+            if (backendStatus.available) {
+                console.log('✅ Backend disponible:', backendStatus);
+                this.backendAvailable = true;
+            } else {
+                console.warn('⚠️ Backend no disponible, usando localStorage como fallback');
+                this.backendAvailable = false;
+            }
+            
             // Inicializar módulos
             await this.initModules();
-            console.log('📦 Módulos inicializados');
+            console.log('� Módulos inicializados');
             
             // Configurar navegación
             this.setupNavigation();
             console.log('🧭 Navegación configurada');
             
-            // Cargar datos de ejemplo si no existen
-            if (!StorageUtils.hasData()) {
-                console.log('📂 Cargando datos de ejemplo...');
-                StorageUtils.loadExampleData();
-                console.log('✅ Datos de ejemplo cargados');
-            } else {
-                console.log('📂 Datos ya existen en localStorage');
-            }
+            // Cargar datos (desde API o localStorage)
+            await this.cargarDatos();
+            console.log('📂 Datos cargados');
             
             // Inicializar dashboard automáticamente al cargar
             console.log('📊 Inicializando dashboard automáticamente...');
@@ -44,6 +51,45 @@ class PlataformaGanadera {
             console.log('✅ Plataforma Ganadera inicializada correctamente');
         } catch (error) {
             console.error('❌ Error al inicializar la plataforma:', error);
+        }
+    }
+
+    async cargarDatos() {
+        if (this.backendAvailable) {
+            // Usar API si el backend está disponible
+            try {
+                console.log('🌐 Cargando datos desde API...');
+                
+                // Cargar fundos
+                const fundosResponse = await window.apiService.getFundos();
+                this.fundos = fundosResponse.data;
+                console.log(`🏭 ${this.fundos.length} fundos cargados desde API`);
+                
+                // Si no hay fundos, cargar datos de ejemplo desde localStorage
+                if (this.fundos.length === 0 && !StorageUtils.hasData()) {
+                    console.log('📂 No hay datos en API, cargando datos de ejemplo...');
+                    StorageUtils.loadExampleData();
+                }
+                
+            } catch (error) {
+                console.error('❌ Error cargando datos desde API:', error);
+                console.log('🔄 Haciendo fallback a localStorage...');
+                this.cargarDatosLocalStorage();
+            }
+        } else {
+            // Usar localStorage si el backend no está disponible
+            this.cargarDatosLocalStorage();
+        }
+    }
+
+    async cargarDatosLocalStorage() {
+        // Cargar datos de ejemplo si no existen
+        if (!StorageUtils.hasData()) {
+            console.log('📂 Cargando datos de ejemplo...');
+            StorageUtils.loadExampleData();
+            console.log('✅ Datos de ejemplo cargados');
+        } else {
+            console.log('📂 Datos ya existen en localStorage');
         }
     }
 
@@ -185,9 +231,6 @@ class PlataformaGanadera {
     // Eliminamos loadView ya que no es necesario con el HTML integrado
 
     // Métodos globales accesibles desde cualquier módulo
-    cerrarModal() {
-        document.getElementById('modalDetalles').style.display = 'none';
-    }
 
     async exportarDatos() {
         return this.modules.historial.exportarCSV();

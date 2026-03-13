@@ -31,7 +31,11 @@ class DashboardModule {
             console.log('🔄 Cargando datos del dashboard...');
             
             // Cargar datos de producción desde MongoDB
-            const response = await fetch('http://localhost:3000/api/registros');
+            const apiURL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? 'http://localhost:3000/api/registros'
+                : 'https://name-plataforma-ganadera-backend.onrender.com/api/registros';
+            
+            const response = await fetch(apiURL);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
