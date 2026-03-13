@@ -370,71 +370,65 @@ class DashboardModule {
             return;
         }
         
-        // Calcular totales
-        const totales = datos.reduce((acc, d) => {
-            acc.lecheDiaria += d.produccion?.litros || 0;
-            acc.vacasOrdeña += d.vacas?.enOrdeña || d.vacas?.estanque || 0;
-            acc.proteina += d.produccion?.proteina || 0;
-            acc.grasa += d.produccion?.grasa || 0;
-            acc.concentrado += d.alimentacion?.concentrado || 0;
-            
-            // Intentar múltiples campos para costo de dieta
-            const costoDieta = d.economia?.costoDieta || 
-                             d.economia?.costo_alimentacion || 
-                             d.economia?.costoDietaDiario ||
-                             d.costoDieta ||
-                             0;
-            acc.costoDieta += costoDieta;
-            
-            // Ingresos estimados (precio leche * litros)
-            const precioLeche = d.economia?.precioLeche || d.precioLeche || 850; // $850/L por defecto
-            acc.ingresos += (d.produccion?.litros || 0) * precioLeche;
-            
-            return acc;
-        }, {
-            lecheDiaria: 0,
-            vacasOrdeña: 0,
-            proteina: 0,
-            grasa: 0,
-            concentrado: 0,
-            costoDieta: 0,
-            ingresos: 0
-        });
+        // Ordenar datos por fecha
+        datos.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
         
-        console.log('📊 Datos brutos para cálculo:', {
-            muestraDatos: datos.slice(0, 2),
-            totales: totales
-        });
+        // Obtener último y penúltimo día con datos
+        const fechasUnicas = [...new Set(datos.map(d => d.fecha))].sort();
+        const ultimaFecha = fechasUnicas[fechasUnicas.length - 1];
+        const penultimaFecha = fechasUnicas.length > 1 ? fechasUnicas[fechasUnicas.length - 2] : null;
         
-        // Calcular promedios
-        const dias = datos.length;
-        const lecheDiaria = totales.lecheDiaria / dias;
-        const vacasOrdeña = totales.vacasOrdeña / dias;
-        const proteinaPromedio = totales.proteina / dias;
-        const grasaPromedio = totales.grasa / dias;
-        const concentradoDiario = totales.concentrado / dias;
-        const costoDietaDiario = totales.costoDieta / dias;
-        const ingresosDiarios = totales.ingresos / dias;
+        const datosUltimoDia = datos.filter(d => d.fecha === ultimaFecha);
+        const datosPenultimoDia = penultimaFecha ? datos.filter(d => d.fecha === penultimaFecha) : [];
+        
+        console.log(`📅 Última fecha: ${ultimaFecha}, Penúltima: ${penultimaFecha || 'N/A'}`);
+        console.log(`📊 Registros último día: ${datosUltimoDia.length}, penúltimo: ${datosPenultimoDia.length}`);
+        
+        // Calcular agregados para el último día
+        const totalesUltimo = this.calcularTotales(datosUltimoDia);
+        const totalesPenultimo = this.calcularTotales(datosPenultimoDia);
+        
+        // Calcular KPIs del último día
+        const lecheDiaria = totalesUltimo.leche;
+        const vacasOrdeña = totalesUltimo.vacas;
+        const proteinaPromedio = totalesUltimo.proteina;
+        const grasaPromedio = totalesUltimo.grasa;
+        const concentradoDiario = totalesUltimo.concentrado;
+        
+        // Calcular KPIs del penúltimo día para tendencias
+        const lecheDiariaAnterior = totalesPenultimo.leche;
+        const vacasOrdeñaAnterior = totalesPenultimo.vacas;
+        const proteinaPromedioAnterior = totalesPenultimo.proteina;
+        const grasaPromedioAnterior = totalesPenultimo.grasa;
+        const concentradoDiarioAnterior = totalesPenultimo.concentrado;
         
         // Calcular KPIs derivados
+        const dias = 1; // Último día
+        const costoDietaDiario = totalesUltimo.costoDieta / dias;
+        const ingresosDiarios = totalesUltimo.ingresos / dias;
+        
         const litrosVacaDia = vacasOrdeña > 0 ? lecheDiaria / vacasOrdeña : 0;
         const costoPorLitro = lecheDiaria > 0 ? costoDietaDiario / lecheDiaria : 0;
         const costoPorVaca = vacasOrdeña > 0 ? costoDietaDiario / vacasOrdeña : 0;
         const calidadGeneral = (proteinaPromedio + grasaPromedio) / 2;
         const margenEstimado = ingresosDiarios - costoDietaDiario;
         
+        // Calcular KPIs anteriores para tendencias
+        const costoDietaDiarioAnterior = totalesPenultimo.costoDieta;
+        const ingresosDiariosAnterior = totalesPenultimo.ingresos;
+        const litrosVacaDiaAnterior = vacasOrdeñaAnterior > 0 ? lecheDiariaAnterior / vacasOrdeñaAnterior : 0;
+        const costoPorLitroAnterior = lecheDiariaAnterior > 0 ? costoDietaDiarioAnterior / lecheDiariaAnterior : 0;
+        const costoPorVacaAnterior = vacasOrdeñaAnterior > 0 ? costoDietaDiarioAnterior / vacasOrdeñaAnterior : 0;
+        const calidadGeneralAnterior = (proteinaPromedioAnterior + grasaPromedioAnterior) / 2;
+        const margenEstimadoAnterior = ingresosDiariosAnterior - costoDietaDiarioAnterior;
+        
         console.log(`📈 KPIs calculados:`, {
             lecheDiaria: lecheDiaria.toFixed(0),
             vacasOrdeña: vacasOrdeña.toFixed(0),
             proteina: proteinaPromedio.toFixed(2),
             grasa: grasaPromedio.toFixed(2),
-            concentradoDiario: concentradoDiario.toFixed(0),
-            costoDietaDiario: costoDietaDiario.toFixed(0),
-            ingresosDiarios: ingresosDiarios.toFixed(0),
             litrosVacaDia: litrosVacaDia.toFixed(1),
             costoPorLitro: costoPorLitro.toFixed(2),
-            costoPorVaca: costoPorVaca.toFixed(2),
-            calidadGeneral: calidadGeneral.toFixed(2),
             margenEstimado: margenEstimado.toFixed(0)
         });
         
@@ -443,8 +437,6 @@ class DashboardModule {
         this.actualizarKPIDom('vacasOrdeña', vacasOrdeña.toFixed(0), 'vacas');
         this.actualizarKPIDom('proteina', proteinaPromedio.toFixed(2), '%');
         this.actualizarKPIDom('grasa', grasaPromedio.toFixed(2), '%');
-        
-        // Actualizar KPIs adicionales
         this.actualizarKPIDom('litrosVacaDia', litrosVacaDia.toFixed(1), 'L/vaca');
         this.actualizarKPIDom('costoPorLitro', costoPorLitro.toFixed(2), '$/L');
         this.actualizarKPIDom('costoPorVaca', costoPorVaca.toFixed(2), '$/vaca');
@@ -453,6 +445,76 @@ class DashboardModule {
         this.actualizarKPIDom('ingresosDiarios', ingresosDiarios.toFixed(0), '$');
         this.actualizarKPIDom('margenEstimado', margenEstimado.toFixed(0), '$');
         this.actualizarKPIDom('calidadGeneral', calidadGeneral.toFixed(2), '%');
+        
+        // Actualizar tendencias si hay datos anteriores
+        if (penultimaFecha && datosPenultimoDia.length > 0) {
+            console.log('📈 Actualizando tendencias...');
+            
+            this.actualizarTrend('trendLecheDiaria', lecheDiaria, lecheDiariaAnterior);
+            this.actualizarTrend('trendVacasOrdeña', vacasOrdeña, vacasOrdeñaAnterior);
+            this.actualizarTrend('trendProteina', proteinaPromedio, proteinaPromedioAnterior);
+            this.actualizarTrend('trendGrasa', grasaPromedio, grasaPromedioAnterior);
+            this.actualizarTrend('trendLitrosVacaDia', litrosVacaDia, litrosVacaDiaAnterior);
+            this.actualizarTrend('trendCostoPorLitro', costoPorLitro, costoPorLitroAnterior);
+            this.actualizarTrend('trendCostoDietaVaca', costoPorVaca, costoPorVacaAnterior);
+            this.actualizarTrend('trendCostoTotalDiario', costoDietaDiario, costoDietaDiarioAnterior);
+            this.actualizarTrend('trendIngresoEstimado', ingresosDiarios, ingresosDiariosAnterior);
+            this.actualizarTrend('trendMargenEstimado', margenEstimado, margenEstimadoAnterior);
+            this.actualizarTrend('trendCalidadLeche', calidadGeneral, calidadGeneralAnterior);
+        } else {
+            console.log('⚠️ Sin datos anteriores para calcular tendencias');
+            
+            // Establecer tendencias en 0 si no hay datos anteriores
+            const trendElements = ['trendLecheDiaria', 'trendVacasOrdeña', 'trendProteina', 'trendGrasa', 
+                                  'trendLitrosVacaDia', 'trendCostoPorLitro', 'trendCostoDietaVaca', 
+                                  'trendCostoTotalDiario', 'trendIngresoEstimado', 'trendMargenEstimado', 'trendCalidadLeche'];
+            
+            trendElements.forEach(elementId => {
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.textContent = '➡️ 0%';
+                    element.className = 'kpi-trend neutral';
+                }
+            });
+        }
+    }
+
+    /**
+     * Calcular totales para un conjunto de datos
+     */
+    calcularTotales(datos) {
+        const totales = {
+            leche: 0,
+            vacas: 0,
+            proteina: 0,
+            grasa: 0,
+            concentrado: 0,
+            costoDieta: 0,
+            ingresos: 0
+        };
+        
+        if (datos.length === 0) return totales;
+        
+        datos.forEach(d => {
+            const produccion = d.produccion || {};
+            const alimentacion = d.alimentacion || {};
+            const economia = d.economia || {};
+            const vacas = d.vacas || {};
+            
+            totales.leche += produccion.litros || 0;
+            totales.vacas += vacas.estanque || 0;
+            totales.proteina += produccion.proteina || 0;
+            totales.grasa += produccion.grasa || 0;
+            totales.concentrado += alimentacion.concentrado || 0;
+            totales.costoDieta += economia.costo_alimentacion || 0;
+            totales.ingresos += economia.ingreso_total || 0;
+        });
+        
+        // Calcular promedios
+        totales.proteina = datos.length > 0 ? totales.proteina / datos.length : 0;
+        totales.grasa = datos.length > 0 ? totales.grasa / datos.length : 0;
+        
+        return totales;
     }
 
     /**
@@ -502,6 +564,86 @@ class DashboardModule {
             console.log(`✅ KPI actualizado: ${elementoId} = ${valorFormateado} ${unidad}`);
         } else {
             console.warn(`⚠️ Elemento KPI no encontrado: ${elementoId}`);
+        }
+    }
+
+    /**
+     * Actualizar tendencia de un KPI
+     */
+    actualizarTrend(elementId, valorActual, valorAnterior) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+        
+        if (valorActual === null || valorActual === undefined || valorAnterior === null || valorAnterior === undefined || valorAnterior === 0) {
+            element.textContent = '➡️ 0%';
+            element.className = 'kpi-trend neutral';
+            return;
+        }
+        
+        const cambio = ((valorActual - valorAnterior) / valorAnterior) * 100;
+        const perspectiva = this.getPerspectivaKPI(elementId);
+        
+        // Determinar si el cambio es bueno o malo según la perspectiva
+        const esBueno = this.evaluarCambioPerspectiva(cambio, perspectiva);
+        
+        if (esBueno) {
+            element.textContent = `📈 ${cambio.toFixed(1)}%`;
+            element.className = 'kpi-trend positive';
+        } else if (cambio < 0) {
+            element.textContent = `📉 ${cambio.toFixed(1)}%`;
+            element.className = 'kpi-trend negative';
+        } else {
+            element.textContent = `➡️ ${cambio.toFixed(1)}%`;
+            element.className = 'kpi-trend neutral';
+        }
+    }
+
+    /**
+     * Obtener perspectiva del KPI (más es mejor o menos es mejor)
+     */
+    getPerspectivaKPI(elementId) {
+        const perspectivas = {
+            // Más es mejor 📈
+            'trendLecheDiaria': 'mas-es-mejor',
+            'trendLitrosVacaDia': 'mas-es-mejor',
+            'trendVacasOrdeña': 'mas-es-mejor',
+            'trendProteina': 'mas-es-mejor',
+            'trendGrasa': 'mas-es-mejor',
+            'trendCalidadLeche': 'mas-es-mejor',
+            'trendIngresoEstimado': 'mas-es-mejor',
+            'trendMargenEstimado': 'mas-es-mejor',
+            
+            // Menos es mejor 📉
+            'trendCostoDietaLitro': 'menos-es-mejor',
+            'trendCostoDietaVaca': 'menos-es-mejor',
+            'trendCostoTotalDiario': 'menos-es-mejor',
+            'trendCostoPorLitro': 'menos-es-mejor',
+            'trendCostoAlimentacion': 'menos-es-mejor',
+            
+            // Depende del contexto 📊
+            'trendUrea': 'depende-contexto',
+            'trendRecuento': 'depende-contexto',
+            'trendRCT': 'depende-contexto',
+            'trendCrioscopia': 'depende-contexto'
+        };
+        
+        return perspectivas[elementId] || 'mas-es-mejor';
+    }
+
+    /**
+     * Evaluar si el cambio es bueno según la perspectiva
+     */
+    evaluarCambioPerspectiva(cambio, perspectiva) {
+        switch (perspectiva) {
+            case 'mas-es-mejor':
+                return cambio > 0;
+            case 'menos-es-mejor':
+                return cambio < 0;
+            case 'depende-contexto':
+                // Para valores que dependen del contexto, usar umbral
+                return Math.abs(cambio) < 5; // Cambio menor al 5% es neutral
+            default:
+                return cambio > 0;
         }
     }
 
