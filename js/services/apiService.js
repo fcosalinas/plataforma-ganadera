@@ -12,7 +12,7 @@ class ApiService {
             return 'http://localhost:3000/api';
         } else {
             // En producción, la URL del backend de Render
-            return 'https://plataforma-gestion-lechera.onrender.com/api';
+            return 'https://name-plataforma-ganadera-backend.onrender.com/api';
         }
     }
 
